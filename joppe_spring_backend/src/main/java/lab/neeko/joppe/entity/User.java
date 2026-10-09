@@ -17,9 +17,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "group_id", nullable = false)
+    private PermissionGroup permissionGroup;
 
     @Column(name = "email", length = 255, nullable = false, unique = true)
     private String email;

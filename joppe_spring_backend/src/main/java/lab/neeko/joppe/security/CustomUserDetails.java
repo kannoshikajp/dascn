@@ -16,17 +16,21 @@ public class CustomUserDetails implements UserDetails {
         this.user = user;
     }
 
+    public User getUser() {
+        return user;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (user.getRole() == null) return Collections.emptyList();
+        if (user.getPermissionGroup() == null) return Collections.emptyList();
         
         java.util.List<GrantedAuthority> authorities = new java.util.ArrayList<>();
-        if (user.getRole().getPermissions() != null) {
-            user.getRole().getPermissions().forEach(permission -> 
+        if (user.getPermissionGroup().getPermissions() != null) {
+            user.getPermissionGroup().getPermissions().forEach(permission -> 
                 authorities.add(new SimpleGrantedAuthority(permission.getPermissionName()))
             );
         }
-        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName()));
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getPermissionGroup().getGroupName()));
         return authorities;
     }
 

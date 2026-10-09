@@ -23,6 +23,14 @@ public class PermissionGroup {
     @Column(name = "description", length = 255)
     private String description;
 
-    @OneToMany(mappedBy = "permissionGroup", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Permission> permissions;
+    @Column(name = "is_built_in", columnDefinition = "boolean default false")
+    private Boolean isBuiltIn = false;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "group_permissions",
+        joinColumns = @JoinColumn(name = "group_id"),
+        inverseJoinColumns = @JoinColumn(name = "permission_id")
+    )
+    private java.util.Set<Permission> permissions;
 }

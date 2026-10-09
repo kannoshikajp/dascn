@@ -39,4 +39,10 @@ public class AuthenticationController {
     ) {
         return ResponseEntity.ok(service.googleLogin(request));
     }
+
+    @PostMapping("/logout")
+    public void logout() {
+        // This endpoint is just for Swagger documentation.
+        // The actual logout logic is handled by Spring Security's LogoutFilter and LogoutService.
+    }
 }

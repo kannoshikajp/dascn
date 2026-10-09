@@ -18,10 +18,9 @@ public class Permission {
     @Column(name = "permission_name", length = 100, nullable = false, unique = true)
     private String permissionName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id", nullable = false)
-    private PermissionGroup permissionGroup;
-
     @Column(name = "description", length = 255)
     private String description;
+
+    @Column(name = "category", length = 100)
+    private String category;
 }
