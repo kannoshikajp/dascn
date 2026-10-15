@@ -12,6 +12,8 @@ public interface PermissionRepository extends JpaRepository<Permission, Integer>
 
     boolean existsByPermissionName(String permissionName);
 
+    List<Permission> findByPermissionNameIn(java.util.Collection<String> permissionNames);
+
     @Query("SELECT p.permissionName FROM Permission p JOIN RolePermission rp ON p.id = rp.id.permissionId WHERE rp.id.roleId = :roleId")
     List<String> findPermissionNamesByRoleId(@Param("roleId") Integer roleId);
 
