@@ -49,6 +49,7 @@ application-local.yaml
 out/
 
 ## Eclipse & STS
+.metadata/
 .apt_generated
 .classpath
 .factorypath
