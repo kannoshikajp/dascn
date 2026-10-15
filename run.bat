@@ -54,13 +54,9 @@ echo [Step 3] Loading environment variables from file...
 echo ========================================================
 
 set "ENV_FILE="
-if exist "%ROOT_DIR%.env" (
-    set "ENV_FILE=%ROOT_DIR%.env"
-) else if exist "%ROOT_DIR%.env.local" (
-    set "ENV_FILE=%ROOT_DIR%.env.local"
-) else if exist "%BACKEND_DIR%\.env" (
-    set "ENV_FILE=%BACKEND_DIR%\.env"
-)
+if exist "%BACKEND_DIR%\.env" set "ENV_FILE=%BACKEND_DIR%\.env"
+if exist "%ROOT_DIR%.env.local" set "ENV_FILE=%ROOT_DIR%.env.local"
+if exist "%ROOT_DIR%.env" set "ENV_FILE=%ROOT_DIR%.env"
 
 if defined ENV_FILE (
     echo Loading variables from: %ENV_FILE%
@@ -72,7 +68,7 @@ if defined ENV_FILE (
         )
     )
 ) else (
-    echo No .env file found (checked %ROOT_DIR%.env, %ROOT_DIR%.env.local, %BACKEND_DIR%\.env).
+    echo No .env file found.
     echo Using system environment / default application.properties.
 )
 
@@ -91,7 +87,6 @@ exit /b %APP_STATUS%
 set "ENV_KEY=%~1"
 set "ENV_VAL=%~2"
 if defined ENV_KEY if defined ENV_VAL (
-    rem Trim leading/trailing whitespace from key
     for /f "tokens=* delims= " %%X in ("%ENV_KEY%") do set "ENV_KEY=%%X"
     set "%ENV_KEY%=%ENV_VAL%"
     echo   [ENV] %ENV_KEY% set

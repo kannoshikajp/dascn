@@ -127,7 +127,7 @@ if exist "%BACKEND_DIR%\src\main\resources\application.properties" (
 for %%F in ("%BACKEND_DIR%\target\*.jar") do (
     set "FNAME=%%~nxF"
     if not "!FNAME:~-13!"==".jar.original" (
-        echo Output JAR: %%F (%%~zF bytes)
+        echo Output JAR: %%F [%%~zF bytes]
     )
 )
 
