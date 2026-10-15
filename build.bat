@@ -120,6 +120,10 @@ if %BUILD_STATUS% neq 0 (
 echo ========================================================
 echo [3/3] Build SUCCESS!
 echo ========================================================
+if exist "%BACKEND_DIR%\src\main\resources\application.properties" (
+    copy /y "%BACKEND_DIR%\src\main\resources\application.properties" "%BACKEND_DIR%\target\application.properties" >nul
+    echo Config copied: %BACKEND_DIR%\target\application.properties
+)
 for %%F in ("%BACKEND_DIR%\target\*.jar") do (
     set "FNAME=%%~nxF"
     if not "!FNAME:~-13!"==".jar.original" (
