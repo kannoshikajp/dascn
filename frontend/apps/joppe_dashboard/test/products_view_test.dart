@@ -94,6 +94,27 @@ void main() {
           headers: {'content-type': 'application/json'},
         );
       }
+      if (request.url.path == '/api/v1/admin/products/p1-uuid/variants') {
+        return http.Response(
+          jsonEncode([
+            {
+              'id': 'v1-uuid',
+              'sku': 'ROG-G16-16GB-4060',
+              'variantName': '16GB RAM / RTX 4060',
+              'attributes': '{"RAM": "16GB", "GPU": "RTX 4060"}',
+              'listPrice': 45000000.0,
+              'salePrice': 42000000.0,
+              'quantityOnHand': 12,
+              'quantityReserved': 0,
+              'availableQuantity': 12,
+              'weightGram': 2400.0,
+              'isActive': true,
+            }
+          ]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
       if (request.url.path == '/api/v1/admin/products/p1-uuid/status') {
         return http.Response('', 204);
       }
@@ -153,5 +174,48 @@ void main() {
     expect(find.text('Categories (Select one or multiple)'), findsOneWidget);
     expect(find.text('Laptops > Gaming'), findsOneWidget);
     expect(find.text('List Price (VND)'), findsOneWidget);
+  });
+
+  testWidgets('opens Manage Variants dialog and displays spec attributes', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(createSubject());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byIcon(Icons.tune_outlined), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.tune_outlined));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Variants & Hardware Specs'), findsOneWidget);
+    expect(find.text('Add Variant'), findsOneWidget);
+  });
+
+  testWidgets('opens Add Spec Variant dialog with dynamic attribute chips', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(createSubject());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.byIcon(Icons.tune_outlined));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.tap(find.text('Add Variant'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Add Spec Variant'), findsOneWidget);
+    expect(find.text('Hardware Specs (RAM, GPU, CPU...)'), findsOneWidget);
+    expect(find.text('+ RAM'), findsOneWidget);
+    expect(find.text('+ GPU'), findsOneWidget);
+    expect(find.text('+ CPU'), findsOneWidget);
+    expect(find.text('+ Storage'), findsOneWidget);
   });
 }

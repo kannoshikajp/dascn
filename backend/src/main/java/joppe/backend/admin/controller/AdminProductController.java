@@ -4,9 +4,12 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import joppe.backend.admin.dto.CreateProductRequest;
+import joppe.backend.admin.dto.CreateVariantRequest;
 import joppe.backend.admin.dto.ProductResponse;
+import joppe.backend.admin.dto.ProductVariantSummary;
 import joppe.backend.admin.dto.UpdateProductRequest;
 import joppe.backend.admin.dto.UpdateProductStatusRequest;
+import joppe.backend.admin.dto.UpdateVariantRequest;
 import joppe.backend.admin.service.AdminProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -76,5 +79,42 @@ public class AdminProductController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProduct(@PathVariable UUID id) {
         adminProductService.deleteProduct(id);
+    }
+
+    // =========================================================================
+    // Product Variant Management
+    // =========================================================================
+
+    @GetMapping("/{productId}/variants")
+    @PreAuthorize("hasAnyAuthority('CATALOG_READ', 'CATALOG_WRITE')")
+    public List<ProductVariantSummary> listVariants(@PathVariable UUID productId) {
+        return adminProductService.listVariants(productId);
+    }
+
+    @PostMapping("/{productId}/variants")
+    @PreAuthorize("hasAuthority('CATALOG_WRITE')")
+    public ResponseEntity<ProductVariantSummary> createVariant(
+            @PathVariable UUID productId,
+            @Valid @RequestBody CreateVariantRequest request) {
+        ProductVariantSummary created = adminProductService.createVariant(productId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PutMapping("/{productId}/variants/{variantId}")
+    @PreAuthorize("hasAuthority('CATALOG_WRITE')")
+    public ProductVariantSummary updateVariant(
+            @PathVariable UUID productId,
+            @PathVariable UUID variantId,
+            @Valid @RequestBody UpdateVariantRequest request) {
+        return adminProductService.updateVariant(productId, variantId, request);
+    }
+
+    @DeleteMapping("/{productId}/variants/{variantId}")
+    @PreAuthorize("hasAuthority('CATALOG_WRITE')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteVariant(
+            @PathVariable UUID productId,
+            @PathVariable UUID variantId) {
+        adminProductService.deleteVariant(productId, variantId);
     }
 }

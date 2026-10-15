@@ -7,6 +7,7 @@ public record ProductVariantSummary(
         UUID id,
         String sku,
         String variantName,
+        String attributes,
         BigDecimal listPrice,
         BigDecimal salePrice,
         Integer quantityOnHand,

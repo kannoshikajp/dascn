@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 class ProductVariantSummary {
   final String id;
   final String sku;
   final String variantName;
+  final String? attributes;
   final double listPrice;
   final double salePrice;
   final int quantityOnHand;
@@ -14,6 +17,7 @@ class ProductVariantSummary {
     required this.id,
     required this.sku,
     required this.variantName,
+    this.attributes,
     this.listPrice = 0.0,
     this.salePrice = 0.0,
     this.quantityOnHand = 0,
@@ -23,11 +27,25 @@ class ProductVariantSummary {
     this.isActive = true,
   });
 
+  Map<String, dynamic> get parsedAttributes {
+    if (attributes == null || attributes!.trim().isEmpty) return {};
+    try {
+      final decoded = jsonDecode(attributes!);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
   factory ProductVariantSummary.fromJson(Map<String, dynamic> json) {
     return ProductVariantSummary(
       id: json['id'] as String? ?? '',
       sku: json['sku'] as String? ?? '',
       variantName: json['variantName'] as String? ?? '',
+      attributes: json['attributes'] as String?,
       listPrice: (json['listPrice'] as num?)?.toDouble() ?? 0.0,
       salePrice: (json['salePrice'] as num?)?.toDouble() ?? 0.0,
       quantityOnHand: (json['quantityOnHand'] as num?)?.toInt() ?? 0,
@@ -42,6 +60,7 @@ class ProductVariantSummary {
         'id': id,
         'sku': sku,
         'variantName': variantName,
+        'attributes': attributes,
         'listPrice': listPrice,
         'salePrice': salePrice,
         'quantityOnHand': quantityOnHand,

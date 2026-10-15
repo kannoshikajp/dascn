@@ -13,10 +13,12 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import joppe.backend.admin.dto.CreateProductRequest;
+import joppe.backend.admin.dto.CreateVariantRequest;
 import joppe.backend.admin.dto.ProductCategorySummary;
 import joppe.backend.admin.dto.ProductResponse;
 import joppe.backend.admin.dto.ProductVariantSummary;
 import joppe.backend.admin.dto.UpdateProductRequest;
+import joppe.backend.admin.dto.UpdateVariantRequest;
 import joppe.backend.domain.catalog.Brand;
 import joppe.backend.domain.catalog.BrandRepository;
 import joppe.backend.domain.catalog.Category;
@@ -199,6 +201,108 @@ public class AdminProductService {
         productRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductVariantSummary> listVariants(UUID productId) {
+        if (!productRepository.existsById(productId)) {
+            throw new IllegalArgumentException("Product not found with ID: " + productId);
+        }
+        return productVariantRepository.findByProductId(productId).stream()
+                .map(this::toVariantSummary)
+                .toList();
+    }
+
+    @Transactional
+    public ProductVariantSummary createVariant(UUID productId, CreateVariantRequest req) {
+        if (!productRepository.existsById(productId)) {
+            throw new IllegalArgumentException("Product not found with ID: " + productId);
+        }
+        String sku = req.sku().trim().toUpperCase(Locale.ROOT);
+        if (productVariantRepository.existsBySku(sku)) {
+            throw new IllegalArgumentException("SKU already exists: " + sku);
+        }
+
+        BigDecimal listPrice = req.listPrice() != null ? req.listPrice() : BigDecimal.ZERO;
+        BigDecimal salePrice = req.salePrice() != null ? req.salePrice() : listPrice;
+        int stock = req.quantityOnHand() != null ? req.quantityOnHand() : 0;
+        int reorder = req.reorderLevel() != null ? req.reorderLevel() : 10;
+        BigDecimal weight = req.weightGram() != null ? req.weightGram() : BigDecimal.ZERO;
+
+        ProductVariant variant = ProductVariant.builder()
+                .productId(productId)
+                .sku(sku)
+                .variantName(req.variantName().trim())
+                .attributes(req.attributes())
+                .listPrice(listPrice)
+                .salePrice(salePrice)
+                .quantityOnHand(stock)
+                .quantityReserved(0)
+                .reorderLevel(reorder)
+                .weightGram(weight)
+                .isActive(req.isActive() != null ? req.isActive() : true)
+                .build();
+
+        ProductVariant saved = productVariantRepository.save(variant);
+        return toVariantSummary(saved);
+    }
+
+    @Transactional
+    public ProductVariantSummary updateVariant(UUID productId, UUID variantId, UpdateVariantRequest req) {
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new IllegalArgumentException("Variant not found with ID: " + variantId));
+
+        if (!variant.getProductId().equals(productId)) {
+            throw new IllegalArgumentException("Variant does not belong to product: " + productId);
+        }
+
+        String newSku = req.sku().trim().toUpperCase(Locale.ROOT);
+        if (!variant.getSku().equalsIgnoreCase(newSku) && productVariantRepository.existsBySku(newSku)) {
+            throw new IllegalArgumentException("SKU already exists: " + newSku);
+        }
+
+        variant.setSku(newSku);
+        variant.setVariantName(req.variantName().trim());
+        variant.setAttributes(req.attributes());
+        if (req.listPrice() != null) variant.setListPrice(req.listPrice());
+        if (req.salePrice() != null) variant.setSalePrice(req.salePrice());
+        if (req.quantityOnHand() != null) variant.setQuantityOnHand(req.quantityOnHand());
+        if (req.reorderLevel() != null) variant.setReorderLevel(req.reorderLevel());
+        if (req.weightGram() != null) variant.setWeightGram(req.weightGram());
+        if (req.isActive() != null) variant.setIsActive(req.isActive());
+
+        ProductVariant saved = productVariantRepository.save(variant);
+        return toVariantSummary(saved);
+    }
+
+    @Transactional
+    public void deleteVariant(UUID productId, UUID variantId) {
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new IllegalArgumentException("Variant not found with ID: " + variantId));
+
+        if (!variant.getProductId().equals(productId)) {
+            throw new IllegalArgumentException("Variant does not belong to product: " + productId);
+        }
+
+        productVariantRepository.deleteById(variantId);
+    }
+
+    private ProductVariantSummary toVariantSummary(ProductVariant v) {
+        int reserved = v.getQuantityReserved() != null ? v.getQuantityReserved() : 0;
+        int onHand = v.getQuantityOnHand() != null ? v.getQuantityOnHand() : 0;
+        return new ProductVariantSummary(
+                v.getId(),
+                v.getSku(),
+                v.getVariantName(),
+                v.getAttributes(),
+                v.getListPrice(),
+                v.getSalePrice(),
+                onHand,
+                reserved,
+                onHand - reserved,
+                v.getWeightGram(),
+                v.getIsActive()
+        );
+    }
+
     private void syncProductCategories(UUID productId, List<Integer> categoryIds, Integer primaryCategoryId) {
         productCategoryRepository.deleteByProductId(productId);
 
@@ -288,18 +392,7 @@ public class AdminProductService {
         }
 
         List<ProductVariantSummary> variantSummaries = variants.stream()
-                .map(v -> new ProductVariantSummary(
-                        v.getId(),
-                        v.getSku(),
-                        v.getVariantName(),
-                        v.getListPrice(),
-                        v.getSalePrice(),
-                        v.getQuantityOnHand(),
-                        v.getQuantityReserved(),
-                        v.getQuantityOnHand() - v.getQuantityReserved(),
-                        v.getWeightGram(),
-                        v.getIsActive()
-                ))
+                .map(this::toVariantSummary)
                 .toList();
 
         BigDecimal minPrice = variants.stream()

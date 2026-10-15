@@ -16,6 +16,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "product_variants")
@@ -39,6 +41,10 @@ public class ProductVariant {
 
     @Column(name = "variant_name", nullable = false, length = 255)
     private String variantName;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "attributes", columnDefinition = "jsonb")
+    private String attributes;
 
     @Column(name = "list_price", nullable = false, precision = 15, scale = 2)
     @Builder.Default

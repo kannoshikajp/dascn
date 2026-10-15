@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:joppe_core/joppe_core.dart';
 import 'package:joppe_design_system/joppe_design_system.dart';
@@ -504,6 +505,575 @@ class _ProductsViewState extends State<ProductsView> {
     );
   }
 
+  void _showVariantsDialog(ProductItem product) {
+    List<ProductVariantSummary> variants = List.of(product.variants);
+    bool isLoadingVariants = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final colorScheme = Theme.of(ctx).colorScheme;
+
+          Future<void> reloadVariants() async {
+            setDialogState(() => isLoadingVariants = true);
+            try {
+              final fresh = await widget.productService.listVariants(product.id);
+              if (ctx.mounted) {
+                setDialogState(() {
+                  variants = fresh;
+                  isLoadingVariants = false;
+                });
+              }
+              _loadData();
+            } catch (e) {
+              if (ctx.mounted) {
+                setDialogState(() => isLoadingVariants = false);
+                _showSnackbar('Failed to load variants: $e');
+              }
+            }
+          }
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.tune_outlined),
+                const SizedBox(width: JoppeSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Variants & Hardware Specs',
+                        style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        product.productName,
+                        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                FilledButton.icon(
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add Variant'),
+                  onPressed: () => _showVariantFormDialog(
+                    product: product,
+                    onSaved: reloadVariants,
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: 750,
+              height: 480,
+              child: isLoadingVariants
+                  ? const Center(child: CircularProgressIndicator())
+                  : variants.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.layers_clear_outlined, size: 48, color: colorScheme.outline),
+                              const SizedBox(height: JoppeSpacing.sm),
+                              const Text('No variants found for this product.'),
+                              const SizedBox(height: JoppeSpacing.sm),
+                              FilledButton.tonalIcon(
+                                icon: const Icon(Icons.add),
+                                label: const Text('Create First Variant'),
+                                onPressed: () => _showVariantFormDialog(
+                                  product: product,
+                                  onSaved: reloadVariants,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: variants.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: JoppeSpacing.sm),
+                          itemBuilder: (ctx, index) {
+                            final v = variants[index];
+                            final attrs = v.parsedAttributes;
+
+                            return Card(
+                              elevation: 0,
+                              color: colorScheme.surfaceContainerLow,
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(color: colorScheme.outlineVariant),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(JoppeSpacing.sm),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: colorScheme.secondaryContainer,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            v.sku,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: colorScheme.onSecondaryContainer,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: JoppeSpacing.sm),
+                                        Expanded(
+                                          child: Text(
+                                            v.variantName,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          ),
+                                        ),
+                                        Text(
+                                          _formatPrice(v.salePrice > 0 ? v.salePrice : v.listPrice),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.primary,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(width: JoppeSpacing.sm),
+                                        Chip(
+                                          label: Text(
+                                            '${v.availableQuantity} available (${v.quantityOnHand} stock)',
+                                            style: const TextStyle(fontSize: 11),
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                        const SizedBox(width: JoppeSpacing.xs),
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_outlined, size: 18),
+                                          tooltip: 'Edit Variant',
+                                          onPressed: () => _showVariantFormDialog(
+                                            product: product,
+                                            variant: v,
+                                            onSaved: reloadVariants,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline, size: 18),
+                                          color: colorScheme.error,
+                                          tooltip: 'Delete Variant',
+                                          onPressed: () async {
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (dCtx) => AlertDialog(
+                                                title: const Text('Delete Variant'),
+                                                content: Text('Delete variant "${v.sku}"?'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(dCtx, false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  FilledButton(
+                                                    style: FilledButton.styleFrom(
+                                                      backgroundColor: colorScheme.error,
+                                                    ),
+                                                    onPressed: () => Navigator.pop(dCtx, true),
+                                                    child: const Text('Delete'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirm == true) {
+                                              try {
+                                                await widget.productService.deleteVariant(product.id, v.id);
+                                                _showSnackbar('Variant deleted');
+                                                reloadVariants();
+                                              } catch (e) {
+                                                _showSnackbar('Cannot delete variant: $e');
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: JoppeSpacing.xs),
+                                    if (attrs.isNotEmpty) ...[
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: attrs.entries.map((entry) {
+                                          return Chip(
+                                            avatar: Icon(
+                                              entry.key.toUpperCase() == 'RAM'
+                                                  ? Icons.memory
+                                                  : entry.key.toUpperCase() == 'GPU'
+                                                      ? Icons.videogame_asset_outlined
+                                                      : entry.key.toUpperCase() == 'CPU'
+                                                          ? Icons.developer_board
+                                                          : Icons.settings_suggest_outlined,
+                                              size: 14,
+                                              color: colorScheme.primary,
+                                            ),
+                                            label: Text(
+                                              '${entry.key}: ${entry.value}',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w500,
+                                                color: colorScheme.onSurface,
+                                              ),
+                                            ),
+                                            backgroundColor: colorScheme.surfaceContainerHighest,
+                                            padding: EdgeInsets.zero,
+                                            visualDensity: VisualDensity.compact,
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ] else ...[
+                                      Text(
+                                        'No structured hardware specs defined.',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontStyle: FontStyle.italic,
+                                          color: colorScheme.outline,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showVariantFormDialog({
+    required ProductItem product,
+    ProductVariantSummary? variant,
+    VoidCallback? onSaved,
+  }) {
+    final isEditing = variant != null;
+    final skuCtrl = TextEditingController(text: variant?.sku ?? '');
+    final nameCtrl = TextEditingController(text: variant?.variantName ?? '');
+    final listPriceCtrl = TextEditingController(text: variant != null ? variant.listPrice.toStringAsFixed(0) : '0');
+    final salePriceCtrl = TextEditingController(text: variant != null ? variant.salePrice.toStringAsFixed(0) : '0');
+    final stockCtrl = TextEditingController(text: variant != null ? variant.quantityOnHand.toString() : '10');
+    final weightCtrl = TextEditingController(text: variant != null ? variant.weightGram.toStringAsFixed(0) : '0');
+    bool isActive = variant?.isActive ?? true;
+
+    final List<MapEntry<TextEditingController, TextEditingController>> specRows = [];
+    if (variant != null && variant.parsedAttributes.isNotEmpty) {
+      for (final entry in variant.parsedAttributes.entries) {
+        specRows.add(MapEntry(
+          TextEditingController(text: entry.key),
+          TextEditingController(text: entry.value.toString()),
+        ));
+      }
+    }
+
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final colorScheme = Theme.of(ctx).colorScheme;
+
+          void addSpecRow(String key, String val) {
+            setDialogState(() {
+              specRows.add(MapEntry(
+                TextEditingController(text: key),
+                TextEditingController(text: val),
+              ));
+            });
+          }
+
+          void removeSpecRow(int index) {
+            setDialogState(() {
+              final row = specRows.removeAt(index);
+              row.key.dispose();
+              row.value.dispose();
+            });
+          }
+
+          return AlertDialog(
+            title: Text(isEditing ? 'Edit Spec Variant' : 'Add Spec Variant'),
+            content: SizedBox(
+              width: 580,
+              child: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: skuCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'SKU *',
+                                hintText: 'e.g. ROG-G16-32GB-4070',
+                              ),
+                              validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                            ),
+                          ),
+                          const SizedBox(width: JoppeSpacing.sm),
+                          Expanded(
+                            child: TextFormField(
+                              controller: nameCtrl,
+                              decoration: const InputDecoration(
+                                labelText: 'Variant Name *',
+                                hintText: 'e.g. 32GB RAM / RTX 4070',
+                              ),
+                              validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: JoppeSpacing.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: listPriceCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(labelText: 'List Price (VND)'),
+                            ),
+                          ),
+                          const SizedBox(width: JoppeSpacing.sm),
+                          Expanded(
+                            child: TextFormField(
+                              controller: salePriceCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(labelText: 'Sale Price (VND)'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: JoppeSpacing.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: stockCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(labelText: 'Quantity On Hand'),
+                            ),
+                          ),
+                          const SizedBox(width: JoppeSpacing.sm),
+                          Expanded(
+                            child: TextFormField(
+                              controller: weightCtrl,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(labelText: 'Weight (Grams)'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: JoppeSpacing.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Hardware Specs (RAM, GPU, CPU...)',
+                              style: Theme.of(ctx).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          TextButton.icon(
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Add Attribute'),
+                            onPressed: () => addSpecRow('', ''),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: JoppeSpacing.xs),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          ActionChip(
+                            label: const Text('+ RAM'),
+                            onPressed: () => addSpecRow('RAM', '16GB'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          ActionChip(
+                            label: const Text('+ GPU'),
+                            onPressed: () => addSpecRow('GPU', 'RTX 4060'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          ActionChip(
+                            label: const Text('+ CPU'),
+                            onPressed: () => addSpecRow('CPU', 'Core i7'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          ActionChip(
+                            label: const Text('+ Storage'),
+                            onPressed: () => addSpecRow('Storage', '1TB SSD'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          ActionChip(
+                            label: const Text('+ Color'),
+                            onPressed: () => addSpecRow('Color', 'Black'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: JoppeSpacing.sm),
+                      if (specRows.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(JoppeSpacing.sm),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: colorScheme.outlineVariant),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'No hardware spec attributes added yet. Click "+ RAM", "+ GPU", or "Add Attribute" above.',
+                              style: TextStyle(fontSize: 12, color: colorScheme.outline),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(JoppeSpacing.xs),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: colorScheme.outlineVariant),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          constraints: const BoxConstraints(maxHeight: 180),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: specRows.length,
+                            separatorBuilder: (_, _) => const SizedBox(height: 4),
+                            itemBuilder: (ctx, idx) {
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextFormField(
+                                      controller: specRows[idx].key,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Spec (e.g. RAM)',
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: JoppeSpacing.xs),
+                                  Expanded(
+                                    flex: 3,
+                                    child: TextFormField(
+                                      controller: specRows[idx].value,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Value (e.g. 32GB)',
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, size: 16),
+                                    onPressed: () => removeSpecRow(idx),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      const SizedBox(height: JoppeSpacing.sm),
+                      SwitchListTile(
+                        title: const Text('Variant Active'),
+                        value: isActive,
+                        onChanged: (val) => setDialogState(() => isActive = val),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  if (!formKey.currentState!.validate()) return;
+
+                  final Map<String, String> attrMap = {};
+                  for (final row in specRows) {
+                    final k = row.key.text.trim();
+                    final v = row.value.text.trim();
+                    if (k.isNotEmpty && v.isNotEmpty) {
+                      attrMap[k] = v;
+                    }
+                  }
+                  final String? attributesJson = attrMap.isNotEmpty ? jsonEncode(attrMap) : null;
+
+                  try {
+                    if (isEditing) {
+                      await widget.productService.updateVariant(
+                        product.id,
+                        variant.id,
+                        sku: skuCtrl.text.trim(),
+                        variantName: nameCtrl.text.trim(),
+                        attributes: attributesJson,
+                        listPrice: double.tryParse(listPriceCtrl.text),
+                        salePrice: double.tryParse(salePriceCtrl.text),
+                        quantityOnHand: int.tryParse(stockCtrl.text),
+                        weightGram: double.tryParse(weightCtrl.text),
+                        isActive: isActive,
+                      );
+                      _showSnackbar('Variant updated successfully');
+                    } else {
+                      await widget.productService.createVariant(
+                        product.id,
+                        sku: skuCtrl.text.trim(),
+                        variantName: nameCtrl.text.trim(),
+                        attributes: attributesJson,
+                        listPrice: double.tryParse(listPriceCtrl.text),
+                        salePrice: double.tryParse(salePriceCtrl.text),
+                        quantityOnHand: int.tryParse(stockCtrl.text),
+                        weightGram: double.tryParse(weightCtrl.text),
+                        isActive: isActive,
+                      );
+                      _showSnackbar('Variant created successfully');
+                    }
+
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    onSaved?.call();
+                    _loadData();
+                  } catch (e) {
+                    _showSnackbar('Error saving variant: $e');
+                  }
+                },
+                child: Text(isEditing ? 'Save Variant' : 'Create Variant'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   String _formatPrice(double price) {
     if (price <= 0) return '0 ₫';
     final str = price.toStringAsFixed(0);
@@ -676,7 +1246,7 @@ class _ProductsViewState extends State<ProductsView> {
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
-                                              '/${p.slug} • ${p.variants.isNotEmpty ? p.variants.first.sku : 'No SKU'}',
+                                              '/${p.slug} • ${p.variants.length} variant${p.variants.length == 1 ? '' : 's'}${p.variants.isNotEmpty ? ' • ${p.variants.first.sku}' : ''}',
                                               style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
                                             ),
                                             const SizedBox(height: 4),
@@ -735,6 +1305,11 @@ class _ProductsViewState extends State<ProductsView> {
                                       Switch(
                                         value: p.isActive,
                                         onChanged: (_) => _toggleStatus(p.id, p.isActive),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.tune_outlined),
+                                        onPressed: () => _showVariantsDialog(p),
+                                        tooltip: 'Manage Variants (${p.variants.length})',
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.edit_outlined),

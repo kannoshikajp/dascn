@@ -138,4 +138,31 @@ void main() {
     expect((json['categories'] as List).length, 2);
     expect((json['variants'] as List).length, 1);
   });
+
+  test('ProductVariantSummary JSON and parsed attributes', () {
+    final variant = ProductVariantSummary.fromJson({
+      'id': 'v2',
+      'sku': 'SKU-ROG-32GB',
+      'variantName': '32GB RAM / RTX 4070',
+      'attributes': '{"RAM": "32GB", "GPU": "RTX 4070"}',
+      'listPrice': 55000000.0,
+      'salePrice': 52000000.0,
+      'quantityOnHand': 8,
+      'quantityReserved': 1,
+      'availableQuantity': 7,
+      'weightGram': 2400.0,
+      'isActive': true,
+    });
+
+    expect(variant.sku, 'SKU-ROG-32GB');
+    expect(variant.attributes, isNotNull);
+    final attrs = variant.parsedAttributes;
+    expect(attrs['RAM'], '32GB');
+    expect(attrs['GPU'], 'RTX 4070');
+    expect(variant.availableQuantity, 7);
+
+    final json = variant.toJson();
+    expect(json['sku'], 'SKU-ROG-32GB');
+    expect(json['attributes'], '{"RAM": "32GB", "GPU": "RTX 4070"}');
+  });
 }

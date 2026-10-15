@@ -14,8 +14,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import joppe.backend.admin.dto.CreateProductRequest;
+import joppe.backend.admin.dto.CreateVariantRequest;
 import joppe.backend.admin.dto.ProductResponse;
+import joppe.backend.admin.dto.ProductVariantSummary;
 import joppe.backend.admin.dto.UpdateProductRequest;
+import joppe.backend.admin.dto.UpdateVariantRequest;
 import joppe.backend.admin.service.AdminProductService;
 import joppe.backend.domain.catalog.Brand;
 import joppe.backend.domain.catalog.BrandRepository;
@@ -213,5 +216,115 @@ class AdminProductServiceTest {
 
         verify(productCategoryRepository).deleteByProductId(productId);
         verify(productRepository).deleteById(productId);
+    }
+
+    @Test
+    void createVariant_WithStructuredAttributes_Success() {
+        UUID productId = UUID.randomUUID();
+        UUID variantId = UUID.randomUUID();
+        String attributes = "{\"RAM\": \"32GB\", \"GPU\": \"RTX 4070\", \"SSD\": \"1TB\"}";
+
+        CreateVariantRequest req = new CreateVariantRequest(
+                "SKU-ROG-32GB-4070",
+                "32GB RAM / RTX 4070",
+                attributes,
+                new BigDecimal("55000000"),
+                new BigDecimal("51000000"),
+                8,
+                5,
+                new BigDecimal("2500"),
+                true
+        );
+
+        ProductVariant saved = ProductVariant.builder()
+                .id(variantId)
+                .productId(productId)
+                .sku("SKU-ROG-32GB-4070")
+                .variantName("32GB RAM / RTX 4070")
+                .attributes(attributes)
+                .listPrice(new BigDecimal("55000000"))
+                .salePrice(new BigDecimal("51000000"))
+                .quantityOnHand(8)
+                .quantityReserved(1)
+                .reorderLevel(5)
+                .weightGram(new BigDecimal("2500"))
+                .isActive(true)
+                .build();
+
+        when(productRepository.existsById(productId)).thenReturn(true);
+        when(productVariantRepository.existsBySku("SKU-ROG-32GB-4070")).thenReturn(false);
+        when(productVariantRepository.save(any(ProductVariant.class))).thenReturn(saved);
+
+        ProductVariantSummary result = service.createVariant(productId, req);
+
+        assertNotNull(result);
+        assertEquals("SKU-ROG-32GB-4070", result.sku());
+        assertEquals("32GB RAM / RTX 4070", result.variantName());
+        assertEquals(attributes, result.attributes());
+        assertEquals(8, result.quantityOnHand());
+        assertEquals(1, result.quantityReserved());
+        assertEquals(7, result.availableQuantity());
+    }
+
+    @Test
+    void updateVariant_Success() {
+        UUID productId = UUID.randomUUID();
+        UUID variantId = UUID.randomUUID();
+        String oldAttrs = "{\"RAM\": \"16GB\"}";
+        String newAttrs = "{\"RAM\": \"16GB\", \"Color\": \"White\"}";
+
+        ProductVariant existing = ProductVariant.builder()
+                .id(variantId)
+                .productId(productId)
+                .sku("SKU-ROG-OLD")
+                .variantName("Old Variant")
+                .attributes(oldAttrs)
+                .listPrice(new BigDecimal("40000000"))
+                .salePrice(new BigDecimal("38000000"))
+                .quantityOnHand(5)
+                .quantityReserved(0)
+                .isActive(true)
+                .build();
+
+        UpdateVariantRequest req = new UpdateVariantRequest(
+                "SKU-ROG-UPDATED",
+                "Updated Variant",
+                newAttrs,
+                new BigDecimal("42000000"),
+                new BigDecimal("39000000"),
+                10,
+                5,
+                new BigDecimal("2300"),
+                true
+        );
+
+        when(productVariantRepository.findById(variantId)).thenReturn(Optional.of(existing));
+        when(productVariantRepository.existsBySku("SKU-ROG-UPDATED")).thenReturn(false);
+        when(productVariantRepository.save(any(ProductVariant.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductVariantSummary result = service.updateVariant(productId, variantId, req);
+
+        assertNotNull(result);
+        assertEquals("SKU-ROG-UPDATED", result.sku());
+        assertEquals("Updated Variant", result.variantName());
+        assertEquals(newAttrs, result.attributes());
+        assertEquals(10, result.quantityOnHand());
+    }
+
+    @Test
+    void deleteVariant_Success() {
+        UUID productId = UUID.randomUUID();
+        UUID variantId = UUID.randomUUID();
+
+        ProductVariant variant = ProductVariant.builder()
+                .id(variantId)
+                .productId(productId)
+                .build();
+
+        when(productVariantRepository.findById(variantId)).thenReturn(Optional.of(variant));
+
+        service.deleteVariant(productId, variantId);
+
+        verify(productVariantRepository).deleteById(variantId);
     }
 }
