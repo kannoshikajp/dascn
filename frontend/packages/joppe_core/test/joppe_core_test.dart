@@ -17,4 +17,77 @@ void main() {
     expect(profile.hasPermission('PRODUCT_DELETE'), isFalse);
     expect(profile.toJson()['role'], 'ROLE_ADMIN');
   });
+
+  test('CategoryItem JSON serialization and deserialization', () {
+    final item = CategoryItem.fromJson({
+      'id': 10,
+      'parentId': 2,
+      'parentName': 'Laptops',
+      'categoryName': 'Gaming Laptops',
+      'slug': 'gaming-laptops',
+      'iconUrl': 'https://joppe.vn/icon.png',
+      'isActive': true,
+      'createdAt': '2026-03-30T10:00:00.000Z',
+      'productCount': 42,
+      'childCount': 3,
+    });
+
+    expect(item.id, 10);
+    expect(item.parentId, 2);
+    expect(item.parentName, 'Laptops');
+    expect(item.categoryName, 'Gaming Laptops');
+    expect(item.slug, 'gaming-laptops');
+    expect(item.productCount, 42);
+    expect(item.childCount, 3);
+    expect(item.isActive, isTrue);
+
+    final json = item.toJson();
+    expect(json['id'], 10);
+    expect(json['slug'], 'gaming-laptops');
+  });
+
+  test('CategoryNode JSON hierarchical tree serialization', () {
+    final node = CategoryNode.fromJson({
+      'id': 1,
+      'parentId': null,
+      'categoryName': 'Electronics',
+      'slug': 'electronics',
+      'iconUrl': null,
+      'isActive': true,
+      'productCount': 100,
+      'children': [
+        {
+          'id': 2,
+          'parentId': 1,
+          'categoryName': 'Laptops',
+          'slug': 'laptops',
+          'iconUrl': null,
+          'isActive': true,
+          'productCount': 60,
+          'children': [
+            {
+              'id': 3,
+              'parentId': 2,
+              'categoryName': 'Gaming',
+              'slug': 'gaming',
+              'iconUrl': null,
+              'isActive': true,
+              'productCount': 25,
+              'children': [],
+            }
+          ],
+        }
+      ],
+    });
+
+    expect(node.id, 1);
+    expect(node.children.length, 1);
+    expect(node.children.first.categoryName, 'Laptops');
+    expect(node.children.first.children.length, 1);
+    expect(node.children.first.children.first.categoryName, 'Gaming');
+    expect(node.children.first.children.first.productCount, 25);
+
+    final json = node.toJson();
+    expect((json['children'] as List).length, 1);
+  });
 }

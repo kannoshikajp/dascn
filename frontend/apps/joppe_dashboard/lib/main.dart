@@ -13,11 +13,13 @@ void main() {
   final authService = AuthService(apiClient);
   final userService = UserManagementService(apiClient);
   final rbacService = RbacManagementService(apiClient);
+  final categoryService = CategoryManagementService(apiClient);
 
   runApp(JoppeDashboardApp(
     authService: authService,
     userService: userService,
     rbacService: rbacService,
+    categoryService: categoryService,
   ));
 }
 
@@ -25,6 +27,7 @@ class JoppeDashboardApp extends StatefulWidget {
   final AuthService authService;
   final UserManagementService userService;
   final RbacManagementService rbacService;
+  final CategoryManagementService categoryService;
   final AuthSession? initialSession;
 
   const JoppeDashboardApp({
@@ -32,6 +35,7 @@ class JoppeDashboardApp extends StatefulWidget {
     required this.authService,
     required this.userService,
     required this.rbacService,
+    required this.categoryService,
     this.initialSession,
   });
 
@@ -68,6 +72,7 @@ class _JoppeDashboardAppState extends State<JoppeDashboardApp> {
               authService: widget.authService,
               userService: widget.userService,
               rbacService: widget.rbacService,
+              categoryService: widget.categoryService,
               onLogout: () {
                 setState(() => _session = null);
               },

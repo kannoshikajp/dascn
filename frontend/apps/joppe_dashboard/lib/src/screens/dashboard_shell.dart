@@ -4,12 +4,14 @@ import 'package:joppe_design_system/joppe_design_system.dart';
 import '../views/overview_view.dart';
 import '../views/users_view.dart';
 import '../views/rbac_view.dart';
+import '../views/categories_view.dart';
 
 class DashboardShell extends StatefulWidget {
   final AuthSession session;
   final AuthService authService;
   final UserManagementService userService;
   final RbacManagementService rbacService;
+  final CategoryManagementService categoryService;
   final VoidCallback onLogout;
 
   const DashboardShell({
@@ -18,6 +20,7 @@ class DashboardShell extends StatefulWidget {
     required this.authService,
     required this.userService,
     required this.rbacService,
+    required this.categoryService,
     required this.onLogout,
   });
 
@@ -44,6 +47,11 @@ class _DashboardShellState extends State<DashboardShell> {
         label: 'Users',
       ),
       JoppeNavigationDestination(
+        icon: Icon(Icons.category_outlined),
+        selectedIcon: Icon(Icons.category),
+        label: 'Categories',
+      ),
+      JoppeNavigationDestination(
         icon: Icon(Icons.shield_outlined),
         selectedIcon: Icon(Icons.shield),
         label: 'RBAC Matrix',
@@ -57,7 +65,7 @@ class _DashboardShellState extends State<DashboardShell> {
           userService: widget.userService,
           rbacService: widget.rbacService,
           onNavigateToUsers: () => setState(() => _selectedIndex = 1),
-          onNavigateToRbac: () => setState(() => _selectedIndex = 2),
+          onNavigateToRbac: () => setState(() => _selectedIndex = 3),
         );
         break;
       case 1:
@@ -67,6 +75,11 @@ class _DashboardShellState extends State<DashboardShell> {
         );
         break;
       case 2:
+        currentBody = CategoriesView(
+          categoryService: widget.categoryService,
+        );
+        break;
+      case 3:
         currentBody = RbacView(
           rbacService: widget.rbacService,
         );

@@ -15,7 +15,11 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
     List<Category> findByParentId(Integer parentId);
 
+    long countByParentId(Integer parentId);
+
     List<Category> findByIsActiveTrue();
+
+    List<Category> findAllByOrderByCategoryNameAsc();
 
     @Modifying
     @Query("UPDATE Category c SET c.isActive = :isActive WHERE c.id = :id")

@@ -12,6 +12,7 @@ void main() {
   late AuthService authService;
   late UserManagementService userService;
   late RbacManagementService rbacService;
+  late CategoryManagementService categoryService;
   late AuthSession adminSession;
 
   setUp(() {
@@ -65,6 +66,67 @@ void main() {
           headers: {'content-type': 'application/json'},
         );
       }
+      if (request.url.path == '/api/v1/admin/categories/tree') {
+        return http.Response(
+          jsonEncode([
+            {
+              'id': 1,
+              'parentId': null,
+              'categoryName': 'Laptops',
+              'slug': 'laptops',
+              'iconUrl': null,
+              'isActive': true,
+              'productCount': 10,
+              'children': [
+                {
+                  'id': 2,
+                  'parentId': 1,
+                  'categoryName': 'Gaming Laptops',
+                  'slug': 'gaming-laptops',
+                  'iconUrl': null,
+                  'isActive': true,
+                  'productCount': 5,
+                  'children': [],
+                }
+              ],
+            }
+          ]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path == '/api/v1/admin/categories') {
+        return http.Response(
+          jsonEncode([
+            {
+              'id': 1,
+              'parentId': null,
+              'parentName': null,
+              'categoryName': 'Laptops',
+              'slug': 'laptops',
+              'iconUrl': null,
+              'isActive': true,
+              'createdAt': '2026-03-30T10:00:00Z',
+              'productCount': 10,
+              'childCount': 1,
+            },
+            {
+              'id': 2,
+              'parentId': 1,
+              'parentName': 'Laptops',
+              'categoryName': 'Gaming Laptops',
+              'slug': 'gaming-laptops',
+              'iconUrl': null,
+              'isActive': true,
+              'createdAt': '2026-03-30T10:00:00Z',
+              'productCount': 5,
+              'childCount': 0,
+            }
+          ]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
       return http.Response('[]', 200, headers: {'content-type': 'application/json'});
     });
 
@@ -72,6 +134,7 @@ void main() {
     authService = AuthService(apiClient);
     userService = UserManagementService(apiClient);
     rbacService = RbacManagementService(apiClient);
+    categoryService = CategoryManagementService(apiClient);
 
     adminSession = const AuthSession(
       accessToken: 'dummy-token',
@@ -91,6 +154,7 @@ void main() {
         authService: authService,
         userService: userService,
         rbacService: rbacService,
+        categoryService: categoryService,
       ),
     );
 
@@ -109,6 +173,7 @@ void main() {
         authService: authService,
         userService: userService,
         rbacService: rbacService,
+        categoryService: categoryService,
         initialSession: adminSession,
       ),
     );
@@ -135,6 +200,7 @@ void main() {
         authService: authService,
         userService: userService,
         rbacService: rbacService,
+        categoryService: categoryService,
         initialSession: adminSession,
       ),
     );
@@ -155,6 +221,38 @@ void main() {
     expect(find.text('System Administrator'), findsOneWidget);
   });
 
+  testWidgets('navigates to Categories view and displays category tree', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      JoppeDashboardApp(
+        authService: authService,
+        userService: userService,
+        rbacService: rbacService,
+        categoryService: categoryService,
+        initialSession: adminSession,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Tap Categories navigation item in navigation drawer
+    final categoriesNavItem = find.text('Categories');
+    expect(categoriesNavItem, findsOneWidget);
+    await tester.tap(categoriesNavItem);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Verify Categories view is visible
+    expect(find.text('Add Category'), findsOneWidget);
+    expect(find.text('Laptops'), findsOneWidget);
+    expect(find.text('/laptops'), findsOneWidget);
+  });
+
   testWidgets('navigates to RBAC Matrix view and displays roles', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
@@ -165,6 +263,7 @@ void main() {
         authService: authService,
         userService: userService,
         rbacService: rbacService,
+        categoryService: categoryService,
         initialSession: adminSession,
       ),
     );
