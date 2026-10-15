@@ -1,0 +1,9 @@
+name: joppe_frontend_workspace
+environment:
+  sdk: ^3.13.1
+
+workspace:
+  - apps/joppe_app
+  - apps/joppe_dashboard
+  - packages/joppe_core
+  - packages/joppe_design_system
