@@ -13,6 +13,7 @@ void main() {
   late UserManagementService userService;
   late RbacManagementService rbacService;
   late CategoryManagementService categoryService;
+  late ProductManagementService productService;
   late AuthSession adminSession;
 
   setUp(() {
@@ -127,6 +128,43 @@ void main() {
           headers: {'content-type': 'application/json'},
         );
       }
+      if (request.url.path == '/api/v1/admin/products') {
+        return http.Response(
+          jsonEncode([
+            {
+              'id': 'p1-uuid',
+              'productName': 'ASUS ROG Strix G16',
+              'slug': 'asus-rog-strix-g16',
+              'brandId': 1,
+              'brandName': 'ASUS',
+              'shortDescription': 'Top gaming laptop',
+              'warrantyMonths': 24,
+              'thumbnailUrl': null,
+              'isActive': true,
+              'minPrice': 42000000.0,
+              'maxPrice': 45000000.0,
+              'totalStock': 12,
+              'categories': [
+                {
+                  'id': 1,
+                  'categoryName': 'Laptops',
+                  'slug': 'laptops',
+                  'isPrimary': true,
+                },
+                {
+                  'id': 2,
+                  'categoryName': 'Gaming',
+                  'slug': 'gaming',
+                  'isPrimary': false,
+                }
+              ],
+              'variants': [],
+            }
+          ]),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
       return http.Response('[]', 200, headers: {'content-type': 'application/json'});
     });
 
@@ -135,6 +173,7 @@ void main() {
     userService = UserManagementService(apiClient);
     rbacService = RbacManagementService(apiClient);
     categoryService = CategoryManagementService(apiClient);
+    productService = ProductManagementService(apiClient);
 
     adminSession = const AuthSession(
       accessToken: 'dummy-token',
@@ -155,6 +194,7 @@ void main() {
         userService: userService,
         rbacService: rbacService,
         categoryService: categoryService,
+        productService: productService,
       ),
     );
 
@@ -174,6 +214,7 @@ void main() {
         userService: userService,
         rbacService: rbacService,
         categoryService: categoryService,
+        productService: productService,
         initialSession: adminSession,
       ),
     );
@@ -201,6 +242,7 @@ void main() {
         userService: userService,
         rbacService: rbacService,
         categoryService: categoryService,
+        productService: productService,
         initialSession: adminSession,
       ),
     );
@@ -232,6 +274,7 @@ void main() {
         userService: userService,
         rbacService: rbacService,
         categoryService: categoryService,
+        productService: productService,
         initialSession: adminSession,
       ),
     );
@@ -253,6 +296,40 @@ void main() {
     expect(find.text('/laptops'), findsOneWidget);
   });
 
+  testWidgets('navigates to Products view and displays product list with multi-category tags', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      JoppeDashboardApp(
+        authService: authService,
+        userService: userService,
+        rbacService: rbacService,
+        categoryService: categoryService,
+        productService: productService,
+        initialSession: adminSession,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Tap Products navigation item in navigation drawer
+    final productsNavItem = find.text('Products');
+    expect(productsNavItem, findsOneWidget);
+    await tester.tap(productsNavItem);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Verify Products view is visible
+    expect(find.text('Add Product'), findsOneWidget);
+    expect(find.text('ASUS ROG Strix G16'), findsOneWidget);
+    expect(find.text('Laptops ★'), findsOneWidget);
+    expect(find.text('Gaming'), findsOneWidget);
+  });
+
   testWidgets('navigates to RBAC Matrix view and displays roles', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
@@ -264,6 +341,7 @@ void main() {
         userService: userService,
         rbacService: rbacService,
         categoryService: categoryService,
+        productService: productService,
         initialSession: adminSession,
       ),
     );

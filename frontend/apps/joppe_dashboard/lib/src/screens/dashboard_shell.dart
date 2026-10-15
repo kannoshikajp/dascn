@@ -5,6 +5,7 @@ import '../views/overview_view.dart';
 import '../views/users_view.dart';
 import '../views/rbac_view.dart';
 import '../views/categories_view.dart';
+import '../views/products_view.dart';
 
 class DashboardShell extends StatefulWidget {
   final AuthSession session;
@@ -12,6 +13,7 @@ class DashboardShell extends StatefulWidget {
   final UserManagementService userService;
   final RbacManagementService rbacService;
   final CategoryManagementService categoryService;
+  final ProductManagementService productService;
   final VoidCallback onLogout;
 
   const DashboardShell({
@@ -21,6 +23,7 @@ class DashboardShell extends StatefulWidget {
     required this.userService,
     required this.rbacService,
     required this.categoryService,
+    required this.productService,
     required this.onLogout,
   });
 
@@ -52,6 +55,11 @@ class _DashboardShellState extends State<DashboardShell> {
         label: 'Categories',
       ),
       JoppeNavigationDestination(
+        icon: Icon(Icons.inventory_2_outlined),
+        selectedIcon: Icon(Icons.inventory_2),
+        label: 'Products',
+      ),
+      JoppeNavigationDestination(
         icon: Icon(Icons.shield_outlined),
         selectedIcon: Icon(Icons.shield),
         label: 'RBAC Matrix',
@@ -65,7 +73,7 @@ class _DashboardShellState extends State<DashboardShell> {
           userService: widget.userService,
           rbacService: widget.rbacService,
           onNavigateToUsers: () => setState(() => _selectedIndex = 1),
-          onNavigateToRbac: () => setState(() => _selectedIndex = 3),
+          onNavigateToRbac: () => setState(() => _selectedIndex = 4),
         );
         break;
       case 1:
@@ -80,6 +88,12 @@ class _DashboardShellState extends State<DashboardShell> {
         );
         break;
       case 3:
+        currentBody = ProductsView(
+          productService: widget.productService,
+          categoryService: widget.categoryService,
+        );
+        break;
+      case 4:
         currentBody = RbacView(
           rbacService: widget.rbacService,
         );

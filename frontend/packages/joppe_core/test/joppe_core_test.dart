@@ -90,4 +90,52 @@ void main() {
     final json = node.toJson();
     expect((json['children'] as List).length, 1);
   });
+
+  test('ProductItem JSON multi-category serialization', () {
+    final product = ProductItem.fromJson({
+      'id': 'a1111111-1111-1111-1111-111111111111',
+      'productName': 'ASUS ROG Strix G16',
+      'slug': 'asus-rog-strix-g16',
+      'brandId': 1,
+      'brandName': 'ASUS',
+      'shortDescription': 'Gaming powerhouse',
+      'warrantyMonths': 24,
+      'thumbnailUrl': 'https://joppe.vn/g16.png',
+      'isActive': true,
+      'minPrice': 42000000.0,
+      'maxPrice': 45000000.0,
+      'totalStock': 15,
+      'categories': [
+        {'id': 10, 'categoryName': 'Laptops', 'slug': 'laptops', 'isPrimary': true},
+        {'id': 20, 'categoryName': 'Gaming', 'slug': 'gaming', 'isPrimary': false},
+      ],
+      'variants': [
+        {
+          'id': 'v1111111-1111-1111-1111-111111111111',
+          'sku': 'SKU-ROG-01',
+          'variantName': 'Default Variant',
+          'listPrice': 45000000.0,
+          'salePrice': 42000000.0,
+          'quantityOnHand': 15,
+          'quantityReserved': 0,
+          'availableQuantity': 15,
+          'weightGram': 2500.0,
+          'isActive': true,
+        }
+      ],
+    });
+
+    expect(product.productName, 'ASUS ROG Strix G16');
+    expect(product.categories.length, 2);
+    expect(product.categories.first.isPrimary, isTrue);
+    expect(product.categories.last.isPrimary, isFalse);
+    expect(product.variants.length, 1);
+    expect(product.variants.first.sku, 'SKU-ROG-01');
+    expect(product.totalStock, 15);
+    expect(product.minPrice, 42000000.0);
+
+    final json = product.toJson();
+    expect((json['categories'] as List).length, 2);
+    expect((json['variants'] as List).length, 1);
+  });
 }

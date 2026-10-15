@@ -10,13 +10,8 @@ void main() {
   late MockClient mockClient;
   late ApiClient apiClient;
   late CategoryManagementService categoryService;
-  bool deleteCalled = false;
-  bool patchStatusCalled = false;
 
   setUp(() {
-    deleteCalled = false;
-    patchStatusCalled = false;
-
     mockClient = MockClient((request) async {
       if (request.url.path == '/api/v1/admin/categories/tree') {
         return http.Response(
@@ -80,11 +75,9 @@ void main() {
         );
       }
       if (request.url.path == '/api/v1/admin/categories/1/status') {
-        patchStatusCalled = true;
         return http.Response('', 204);
       }
       if (request.url.path == '/api/v1/admin/categories/2' && request.method == 'DELETE') {
-        deleteCalled = true;
         return http.Response('', 204);
       }
       return http.Response('{}', 200, headers: {'content-type': 'application/json'});

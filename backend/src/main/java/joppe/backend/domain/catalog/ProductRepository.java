@@ -14,7 +14,19 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     boolean existsBySlug(String slug);
 
-    long countByCategoryId(Integer categoryId);
+    @Query("SELECT COUNT(DISTINCT p.id) FROM Product p LEFT JOIN ProductCategory pc ON p.id = pc.productId WHERE p.categoryId = :categoryId OR pc.categoryId = :categoryId")
+    long countByCategoryId(@Param("categoryId") Integer categoryId);
+
+    @Query("SELECT DISTINCT p FROM Product p LEFT JOIN ProductCategory pc ON p.id = pc.productId " +
+           "WHERE (:categoryId IS NULL OR p.categoryId = :categoryId OR pc.categoryId = :categoryId) " +
+           "AND (:brandId IS NULL OR p.brandId = :brandId) " +
+           "AND (:isActive IS NULL OR p.isActive = :isActive) " +
+           "ORDER BY p.createdAt DESC")
+    List<Product> findFiltered(
+            @Param("categoryId") Integer categoryId,
+            @Param("brandId") Integer brandId,
+            @Param("isActive") Boolean isActive
+    );
 
     List<Product> findByCategoryIdAndIsActiveTrue(Integer categoryId);
 
