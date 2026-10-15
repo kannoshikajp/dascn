@@ -1,6 +1,7 @@
 package joppe.backend.auth.dto;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record UserProfileResponse(
@@ -10,6 +11,7 @@ public record UserProfileResponse(
         String phoneNumber,
         String avatarUrl,
         String role,
+        List<String> permissions,
         Boolean isActive,
         OffsetDateTime createdAt
 ) {

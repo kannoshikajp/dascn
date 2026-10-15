@@ -1,8 +1,10 @@
 package joppe.backend.auth.service;
 
+import java.util.List;
 import java.util.UUID;
 import joppe.backend.auth.dto.AuthResponse;
 import joppe.backend.auth.dto.UserProfileResponse;
+import joppe.backend.domain.user.PermissionRepository;
 import joppe.backend.domain.user.Role;
 import joppe.backend.domain.user.RoleRepository;
 import joppe.backend.domain.user.User;
@@ -19,6 +21,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenService jwtTokenService;
 
@@ -50,7 +53,9 @@ public class AuthService {
 
         User saved = userRepository.save(user);
 
-        String token = jwtTokenService.generateToken(saved.getId(), saved.getEmail(), defaultRole.getRoleName());
+        List<String> permissions = permissionRepository.findPermissionNamesByRoleId(defaultRole.getId());
+
+        String token = jwtTokenService.generateToken(saved.getId(), saved.getEmail(), defaultRole.getRoleName(), permissions);
 
         return new AuthResponse(
                 "Bearer",
@@ -59,7 +64,8 @@ public class AuthService {
                 saved.getId(),
                 saved.getEmail(),
                 saved.getFullName(),
-                defaultRole.getRoleName()
+                defaultRole.getRoleName(),
+                permissions
         );
     }
 
@@ -79,7 +85,9 @@ public class AuthService {
         String roleName = roleRepository.findRoleNameById(user.getRoleId())
                 .orElse("ROLE_CUSTOMER");
 
-        String token = jwtTokenService.generateToken(user.getId(), user.getEmail(), roleName);
+        List<String> permissions = permissionRepository.findPermissionNamesByRoleId(user.getRoleId());
+
+        String token = jwtTokenService.generateToken(user.getId(), user.getEmail(), roleName, permissions);
 
         return new AuthResponse(
                 "Bearer",
@@ -88,7 +96,8 @@ public class AuthService {
                 user.getId(),
                 user.getEmail(),
                 user.getFullName(),
-                roleName
+                roleName,
+                permissions
         );
     }
 
@@ -100,6 +109,8 @@ public class AuthService {
         String roleName = roleRepository.findRoleNameById(user.getRoleId())
                 .orElse("ROLE_CUSTOMER");
 
+        List<String> permissions = permissionRepository.findPermissionNamesByRoleId(user.getRoleId());
+
         return new UserProfileResponse(
                 user.getId(),
                 user.getEmail(),
@@ -107,6 +118,7 @@ public class AuthService {
                 user.getPhoneNumber(),
                 user.getAvatarUrl(),
                 roleName,
+                permissions,
                 user.getIsActive(),
                 user.getCreatedAt()
         );

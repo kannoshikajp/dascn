@@ -1,6 +1,8 @@
 package joppe.backend.auth.service;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,17 +23,26 @@ public class JwtTokenService {
     private long expirationSeconds;
 
     public String generateToken(UUID userId, String email, String role) {
+        return generateToken(userId, email, role, Collections.emptyList());
+    }
+
+    public String generateToken(UUID userId, String email, String role, List<String> permissions) {
         Instant now = Instant.now();
         Instant expiresAt = now.plusSeconds(expirationSeconds);
 
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        JwtClaimsSet.Builder builder = JwtClaimsSet.builder()
                 .issuer("joppe-backend")
                 .issuedAt(now)
                 .expiresAt(expiresAt)
                 .subject(userId.toString())
                 .claim("email", email)
-                .claim("role", role)
-                .build();
+                .claim("role", role);
+
+        if (permissions != null && !permissions.isEmpty()) {
+            builder.claim("permissions", permissions);
+        }
+
+        JwtClaimsSet claims = builder.build();
 
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();

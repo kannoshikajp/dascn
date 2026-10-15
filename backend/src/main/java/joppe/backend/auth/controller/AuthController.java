@@ -12,6 +12,7 @@ import joppe.backend.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,6 +49,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
+    @PreAuthorize("hasAuthority('AUTH_ME')")
     public ResponseEntity<UserProfileResponse> getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         UserProfileResponse response = authService.getProfile(userId);
@@ -55,6 +57,7 @@ public class AuthController {
     }
 
     @PostMapping("/change-password")
+    @PreAuthorize("hasAuthority('AUTH_CHANGE_PASSWORD')")
     public ResponseEntity<ApiResponse> changePassword(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody ChangePasswordRequest request) {

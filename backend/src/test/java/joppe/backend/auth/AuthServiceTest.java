@@ -7,12 +7,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import joppe.backend.auth.dto.AuthResponse;
 import joppe.backend.auth.dto.UserProfileResponse;
 import joppe.backend.auth.service.AuthService;
 import joppe.backend.auth.service.JwtTokenService;
+import joppe.backend.domain.user.PermissionRepository;
 import joppe.backend.domain.user.Role;
 import joppe.backend.domain.user.RoleRepository;
 import joppe.backend.domain.user.User;
@@ -35,6 +37,9 @@ class AuthServiceTest {
     private RoleRepository roleRepository;
 
     @Mock
+    private PermissionRepository permissionRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -44,7 +49,7 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, roleRepository, passwordEncoder, jwtTokenService);
+        authService = new AuthService(userRepository, roleRepository, permissionRepository, passwordEncoder, jwtTokenService);
     }
 
     @Test
@@ -57,12 +62,14 @@ class AuthServiceTest {
                 .fullName("Test User")
                 .roleId(1)
                 .build();
+        List<String> permissions = List.of("AUTH_ME", "AUTH_CHANGE_PASSWORD");
 
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
         when(roleRepository.findByRoleName("ROLE_CUSTOMER")).thenReturn(Optional.of(role));
         when(passwordEncoder.encode("password123")).thenReturn("hashedPassword");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
-        when(jwtTokenService.generateToken(userId, "test@example.com", "ROLE_CUSTOMER")).thenReturn("jwt.token.here");
+        when(permissionRepository.findPermissionNamesByRoleId(1)).thenReturn(permissions);
+        when(jwtTokenService.generateToken(userId, "test@example.com", "ROLE_CUSTOMER", permissions)).thenReturn("jwt.token.here");
         when(jwtTokenService.getExpirationSeconds()).thenReturn(86400L);
 
         AuthResponse response = authService.register("test@example.com", "password123", "Test User", null);
@@ -71,6 +78,7 @@ class AuthServiceTest {
         assertEquals("test@example.com", response.email());
         assertEquals("jwt.token.here", response.accessToken());
         assertEquals("ROLE_CUSTOMER", response.role());
+        assertEquals(permissions, response.permissions());
     }
 
     @Test
@@ -92,11 +100,13 @@ class AuthServiceTest {
                 .roleId(1)
                 .isActive(true)
                 .build();
+        List<String> permissions = List.of("AUTH_ME", "AUTH_CHANGE_PASSWORD");
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password123", "hashedPassword")).thenReturn(true);
         when(roleRepository.findRoleNameById(1)).thenReturn(Optional.of("ROLE_CUSTOMER"));
-        when(jwtTokenService.generateToken(userId, "test@example.com", "ROLE_CUSTOMER")).thenReturn("jwt.token.here");
+        when(permissionRepository.findPermissionNamesByRoleId(1)).thenReturn(permissions);
+        when(jwtTokenService.generateToken(userId, "test@example.com", "ROLE_CUSTOMER", permissions)).thenReturn("jwt.token.here");
         when(jwtTokenService.getExpirationSeconds()).thenReturn(86400L);
 
         AuthResponse response = authService.login("test@example.com", "password123");
@@ -104,6 +114,7 @@ class AuthServiceTest {
         assertNotNull(response);
         assertEquals(userId, response.userId());
         assertEquals("jwt.token.here", response.accessToken());
+        assertEquals(permissions, response.permissions());
     }
 
     @Test
@@ -132,9 +143,11 @@ class AuthServiceTest {
                 .roleId(1)
                 .isActive(true)
                 .build();
+        List<String> permissions = List.of("AUTH_ME", "AUTH_CHANGE_PASSWORD");
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(roleRepository.findRoleNameById(1)).thenReturn(Optional.of("ROLE_CUSTOMER"));
+        when(permissionRepository.findPermissionNamesByRoleId(1)).thenReturn(permissions);
 
         UserProfileResponse profile = authService.getProfile(userId);
 
@@ -142,5 +155,6 @@ class AuthServiceTest {
         assertEquals(userId, profile.id());
         assertEquals("test@example.com", profile.email());
         assertEquals("ROLE_CUSTOMER", profile.role());
+        assertEquals(permissions, profile.permissions());
     }
 }

@@ -1,5 +1,6 @@
 package joppe.backend.auth.dto;
 
+import java.util.List;
 import java.util.UUID;
 
 public record AuthResponse(
@@ -9,6 +10,7 @@ public record AuthResponse(
         UUID userId,
         String email,
         String fullName,
-        String role
+        String role,
+        List<String> permissions
 ) {
 }
