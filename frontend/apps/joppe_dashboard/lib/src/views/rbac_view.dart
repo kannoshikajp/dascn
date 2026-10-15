@@ -323,7 +323,8 @@ class _RbacViewState extends State<RbacView> {
                         final isSelected = _selectedRole?.id == r.id;
                         final isSystem = r.roleName == 'ROLE_ADMIN' ||
                             r.roleName == 'ROLE_CUSTOMER' ||
-                            r.roleName == 'ROLE_STAFF';
+                            r.roleName == 'ROLE_STAFF' ||
+                            r.roleName == 'ROLE_NON_LOGIN';
 
                         return ListTile(
                           selected: isSelected,
@@ -382,7 +383,8 @@ class _RbacViewState extends State<RbacView> {
                                               ),
                                               if (_selectedRole!.roleName == 'ROLE_ADMIN' ||
                                                   _selectedRole!.roleName == 'ROLE_CUSTOMER' ||
-                                                  _selectedRole!.roleName == 'ROLE_STAFF')
+                                                  _selectedRole!.roleName == 'ROLE_STAFF' ||
+                                                  _selectedRole!.roleName == 'ROLE_NON_LOGIN')
                                                 Chip(
                                                   label: const Text('System Protected', style: TextStyle(fontSize: 11)),
                                                   backgroundColor: colorScheme.secondaryContainer,
@@ -409,7 +411,8 @@ class _RbacViewState extends State<RbacView> {
                                         ),
                                         if (_selectedRole!.roleName != 'ROLE_ADMIN' &&
                                             _selectedRole!.roleName != 'ROLE_CUSTOMER' &&
-                                            _selectedRole!.roleName != 'ROLE_STAFF') ...[
+                                            _selectedRole!.roleName != 'ROLE_STAFF' &&
+                                            _selectedRole!.roleName != 'ROLE_NON_LOGIN') ...[
                                           const SizedBox(width: JoppeSpacing.xs),
                                           IconButton(
                                             icon: const Icon(Icons.delete_outline),

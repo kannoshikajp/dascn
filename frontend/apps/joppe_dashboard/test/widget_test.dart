@@ -177,8 +177,8 @@ void main() {
     expect(rbacNavItem, findsOneWidget);
     await tester.tap(rbacNavItem);
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
 
     // Verify RBAC view is visible
     expect(find.text('Roles & Permissions Matrix'), findsOneWidget);

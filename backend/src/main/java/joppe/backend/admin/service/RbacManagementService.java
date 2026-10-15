@@ -19,7 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RbacManagementService {
 
-    private static final Set<String> IMMUTABLE_ROLES = Set.of("ROLE_ADMIN", "ROLE_CUSTOMER", "ROLE_STAFF");
+    private static final Set<String> IMMUTABLE_ROLES = Set.of(
+            "ROLE_ADMIN",
+            "ROLE_CUSTOMER",
+            "ROLE_STAFF",
+            "ROLE_NON_LOGIN"
+    );
 
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;

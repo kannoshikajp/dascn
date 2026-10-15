@@ -73,9 +73,12 @@ class RbacManagementServiceTest {
 
     @Test
     void deleteRole_ImmutableSystemRole_ThrowsException() {
-        Role role = Role.builder().id(3).roleName("ROLE_ADMIN").build();
-        when(roleRepository.findById(3)).thenReturn(Optional.of(role));
-
+        Role adminRole = Role.builder().id(3).roleName("ROLE_ADMIN").build();
+        when(roleRepository.findById(3)).thenReturn(Optional.of(adminRole));
         assertThrows(IllegalStateException.class, () -> service.deleteRole(3));
+
+        Role nonLoginRole = Role.builder().id(4).roleName("ROLE_NON_LOGIN").build();
+        when(roleRepository.findById(4)).thenReturn(Optional.of(nonLoginRole));
+        assertThrows(IllegalStateException.class, () -> service.deleteRole(4));
     }
 }
