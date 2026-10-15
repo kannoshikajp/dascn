@@ -3,6 +3,8 @@ target/
 build/
 out/
 bin/
+.tools/
+.jdk/
 *.class
 *.jar
 *.war
