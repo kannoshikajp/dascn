@@ -31,10 +31,22 @@ public class MediaStorageService {
 
     private static final Map<String, String> MIME_TO_EXTENSION = Map.of(
             "image/jpeg", ".jpg",
+            "image/jpg", ".jpg",
+            "image/pjpeg", ".jpg",
             "image/png", ".png",
+            "image/x-png", ".png",
             "image/webp", ".webp",
             "image/gif", ".gif",
             "image/svg+xml", ".svg"
+    );
+
+    private static final Map<String, String> EXTENSION_TO_MIME = Map.of(
+            ".jpg", "image/jpeg",
+            ".jpeg", "image/jpeg",
+            ".png", "image/png",
+            ".webp", "image/webp",
+            ".gif", "image/gif",
+            ".svg", "image/svg+xml"
     );
 
     private final Path rootUploadPath;
@@ -59,16 +71,31 @@ public class MediaStorageService {
             targetFolder = "general";
         }
 
-        String contentType = file.getContentType();
-        if (contentType == null || !MIME_TO_EXTENSION.containsKey(contentType.toLowerCase())) {
-            throw new IllegalArgumentException("Unsupported image format. Allowed: JPEG, PNG, WebP, GIF, SVG");
-        }
-
         String originalFilename = StringUtils.cleanPath(
                 file.getOriginalFilename() != null ? file.getOriginalFilename() : "image"
         );
 
-        String extension = MIME_TO_EXTENSION.get(contentType.toLowerCase());
+        String rawContentType = file.getContentType();
+        String contentType = rawContentType != null ? rawContentType.split(";")[0].trim().toLowerCase() : null;
+
+        String extension = null;
+        if (contentType != null && MIME_TO_EXTENSION.containsKey(contentType)) {
+            extension = MIME_TO_EXTENSION.get(contentType);
+        } else {
+            // Fallback: detect MIME and extension from original filename
+            int lastDot = originalFilename.lastIndexOf('.');
+            if (lastDot >= 0) {
+                String fileExt = originalFilename.substring(lastDot).toLowerCase();
+                if (EXTENSION_TO_MIME.containsKey(fileExt)) {
+                    extension = fileExt.equals(".jpeg") ? ".jpg" : fileExt;
+                    contentType = EXTENSION_TO_MIME.get(fileExt);
+                }
+            }
+        }
+
+        if (extension == null || contentType == null) {
+            throw new IllegalArgumentException("Unsupported image format. Allowed: JPEG, PNG, WebP, GIF, SVG");
+        }
         String uniqueFilename = UUID.randomUUID().toString() + extension;
 
         Path targetDir = this.rootUploadPath.resolve(targetFolder).normalize();

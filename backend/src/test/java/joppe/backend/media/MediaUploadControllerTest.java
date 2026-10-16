@@ -73,4 +73,41 @@ class MediaUploadControllerTest {
                 .andExpect(jsonPath("$.fileName").value("sample-laptop.png"))
                 .andExpect(jsonPath("$.contentType").value("image/png"));
     }
+
+    @Test
+    @WithMockUser(username = "admin@joppe.vn", roles = {"ADMIN"})
+    void uploadJpgImageSucceeds() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "laptop-photo.jpg",
+                "image/jpeg",
+                "sample-jpg-binary-data".getBytes()
+        );
+
+        mockMvc.perform(multipart("/api/v1/media/upload")
+                        .file(file)
+                        .param("folder", "products"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.fileUrl", containsString("/uploads/products/")))
+                .andExpect(jsonPath("$.fileName").value("laptop-photo.jpg"))
+                .andExpect(jsonPath("$.contentType").value("image/jpeg"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@joppe.vn", roles = {"ADMIN"})
+    void uploadJpgWithOctetStreamFallbackSucceeds() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "photo.jpeg",
+                MediaType.APPLICATION_OCTET_STREAM_VALUE,
+                "sample-jpeg-binary-data".getBytes()
+        );
+
+        mockMvc.perform(multipart("/api/v1/media/upload")
+                        .file(file))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.fileUrl", containsString("/uploads/general/")))
+                .andExpect(jsonPath("$.fileName").value("photo.jpeg"))
+                .andExpect(jsonPath("$.contentType").value("image/jpeg"));
+    }
 }

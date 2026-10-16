@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart' as http_parser;
 
 class ApiException implements Exception {
   final int statusCode;
@@ -85,6 +86,22 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  static http_parser.MediaType _resolveContentType(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      return http_parser.MediaType('image', 'jpeg');
+    } else if (lower.endsWith('.png')) {
+      return http_parser.MediaType('image', 'png');
+    } else if (lower.endsWith('.webp')) {
+      return http_parser.MediaType('image', 'webp');
+    } else if (lower.endsWith('.gif')) {
+      return http_parser.MediaType('image', 'gif');
+    } else if (lower.endsWith('.svg')) {
+      return http_parser.MediaType('image', 'svg+xml');
+    }
+    return http_parser.MediaType('application', 'octet-stream');
+  }
+
   Future<dynamic> postMultipart(
     String endpoint, {
     required List<int> bytes,
@@ -106,6 +123,7 @@ class ApiClient {
         fieldName,
         bytes,
         filename: filename,
+        contentType: _resolveContentType(filename),
       ),
     );
     final streamedResponse = await _client.send(request);
