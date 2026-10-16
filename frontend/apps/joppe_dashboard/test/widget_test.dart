@@ -18,6 +18,22 @@ void main() {
 
   setUp(() {
     mockClient = MockClient((request) async {
+      if (request.url.path == '/api/v1/auth/me') {
+        return http.Response(
+          jsonEncode({
+            'id': '1',
+            'email': 'admin@joppe.vn',
+            'fullName': 'System Administrator',
+            'phoneNumber': '0901234567',
+            'avatarUrl': null,
+            'role': 'ROLE_ADMIN',
+            'permissions': ['USER_MANAGE', 'ROLE_MANAGE'],
+            'isActive': true,
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
       if (request.url.path == '/api/v1/admin/users') {
         return http.Response(
           jsonEncode([

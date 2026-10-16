@@ -125,6 +125,41 @@ public class AuthService {
     }
 
     @Transactional
+    public UserProfileResponse updateProfile(UUID userId, String fullName, String phoneNumber, String avatarUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        if (phoneNumber != null && !phoneNumber.isBlank() && !phoneNumber.equals(user.getPhoneNumber())) {
+            if (userRepository.existsByPhoneNumber(phoneNumber)) {
+                throw new IllegalArgumentException("Phone number already in use: " + phoneNumber);
+            }
+        }
+
+        user.setFullName(fullName);
+        user.setPhoneNumber(phoneNumber != null && phoneNumber.isBlank() ? null : phoneNumber);
+        user.setAvatarUrl(avatarUrl != null && avatarUrl.isBlank() ? null : avatarUrl);
+
+        User saved = userRepository.save(user);
+
+        String roleName = roleRepository.findRoleNameById(saved.getRoleId())
+                .orElse("ROLE_CUSTOMER");
+
+        List<String> permissions = permissionRepository.findPermissionNamesByRoleId(saved.getRoleId());
+
+        return new UserProfileResponse(
+                saved.getId(),
+                saved.getEmail(),
+                saved.getFullName(),
+                saved.getPhoneNumber(),
+                saved.getAvatarUrl(),
+                roleName,
+                permissions,
+                saved.getIsActive(),
+                saved.getCreatedAt()
+        );
+    }
+
+    @Transactional
     public void changePassword(UUID userId, String currentPassword, String newPassword) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));

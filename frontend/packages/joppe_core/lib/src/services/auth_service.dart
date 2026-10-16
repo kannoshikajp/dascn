@@ -22,6 +22,34 @@ class AuthService {
     return UserProfile.fromJson(response as Map<String, dynamic>);
   }
 
+  Future<UserProfile> updateProfile({
+    required String fullName,
+    String? phoneNumber,
+    String? avatarUrl,
+  }) async {
+    final payload = <String, dynamic>{
+      'fullName': fullName,
+    };
+    if (phoneNumber != null) {
+      payload['phoneNumber'] = phoneNumber;
+    }
+    if (avatarUrl != null) {
+      payload['avatarUrl'] = avatarUrl;
+    }
+    final response = await _apiClient.put('/api/v1/auth/profile', payload);
+    return UserProfile.fromJson(response as Map<String, dynamic>);
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _apiClient.post('/api/v1/auth/change-password', {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
+
   void logout() {
     _apiClient.setToken(null);
   }

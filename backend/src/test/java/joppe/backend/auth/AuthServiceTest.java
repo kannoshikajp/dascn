@@ -157,4 +157,56 @@ class AuthServiceTest {
         assertEquals("ROLE_CUSTOMER", profile.role());
         assertEquals(permissions, profile.permissions());
     }
+
+    @Test
+    void updateProfile_Success() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder()
+                .id(userId)
+                .email("user@example.com")
+                .fullName("Old Name")
+                .phoneNumber("0900000001")
+                .avatarUrl("https://example.com/old.png")
+                .roleId(1)
+                .isActive(true)
+                .build();
+        List<String> permissions = List.of("AUTH_ME");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleRepository.findRoleNameById(1)).thenReturn(Optional.of("ROLE_CUSTOMER"));
+        when(permissionRepository.findPermissionNamesByRoleId(1)).thenReturn(permissions);
+
+        UserProfileResponse updated = authService.updateProfile(
+                userId,
+                "New Name",
+                "0900000002",
+                "https://example.com/new.png"
+        );
+
+        assertNotNull(updated);
+        assertEquals("New Name", updated.fullName());
+        assertEquals("0900000002", updated.phoneNumber());
+        assertEquals("https://example.com/new.png", updated.avatarUrl());
+        assertEquals("user@example.com", updated.email());
+    }
+
+    @Test
+    void updateProfile_DuplicatePhone_ThrowsException() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder()
+                .id(userId)
+                .email("user@example.com")
+                .fullName("User Name")
+                .phoneNumber("0900000001")
+                .roleId(1)
+                .isActive(true)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.existsByPhoneNumber("0999999999")).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                authService.updateProfile(userId, "User Name", "0999999999", null));
+    }
 }

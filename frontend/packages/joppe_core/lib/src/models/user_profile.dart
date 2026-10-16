@@ -24,6 +24,30 @@ class UserProfile {
   bool hasPermission(String permission) => permissions.contains(permission);
   bool hasAnyPermission(Iterable<String> perms) => perms.any(permissions.contains);
 
+  UserProfile copyWith({
+    String? id,
+    String? email,
+    String? fullName,
+    String? phoneNumber,
+    String? avatarUrl,
+    String? role,
+    List<String>? permissions,
+    bool? isActive,
+    DateTime? createdAt,
+  }) {
+    return UserProfile(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      fullName: fullName ?? this.fullName,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
+      permissions: permissions ?? this.permissions,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
       id: json['id'] as String,

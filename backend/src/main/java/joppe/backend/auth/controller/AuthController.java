@@ -7,6 +7,7 @@ import joppe.backend.auth.dto.AuthResponse;
 import joppe.backend.auth.dto.ChangePasswordRequest;
 import joppe.backend.auth.dto.LoginRequest;
 import joppe.backend.auth.dto.RegisterRequest;
+import joppe.backend.auth.dto.UpdateProfileRequest;
 import joppe.backend.auth.dto.UserProfileResponse;
 import joppe.backend.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,6 +61,23 @@ public class AuthController {
     public ResponseEntity<UserProfileResponse> getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         UserProfileResponse response = authService.getProfile(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/profile")
+    @PreAuthorize("hasAuthority('AUTH_ME')")
+    @Operation(summary = "Update current user profile (full name, phone number, avatar URL)")
+    public ResponseEntity<UserProfileResponse> updateProfile(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody UpdateProfileRequest request) {
+
+        UUID userId = UUID.fromString(jwt.getSubject());
+        UserProfileResponse response = authService.updateProfile(
+                userId,
+                request.fullName(),
+                request.phoneNumber(),
+                request.avatarUrl()
+        );
         return ResponseEntity.ok(response);
     }
 

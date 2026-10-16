@@ -6,6 +6,7 @@ import '../views/users_view.dart';
 import '../views/rbac_view.dart';
 import '../views/categories_view.dart';
 import '../views/products_view.dart';
+import '../widgets/profile_dialog.dart';
 
 class DashboardShell extends StatefulWidget {
   final AuthSession session;
@@ -35,6 +36,65 @@ class DashboardShell extends StatefulWidget {
 
 class _DashboardShellState extends State<DashboardShell> {
   int _selectedIndex = 0;
+  UserProfile? _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _profile = UserProfile(
+      id: widget.session.userId,
+      email: widget.session.email,
+      fullName: widget.session.fullName,
+      role: widget.session.role,
+      permissions: widget.session.permissions,
+    );
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final p = await widget.authService.getCurrentProfile();
+      if (mounted) {
+        setState(() => _profile = p);
+      }
+    } catch (_) {
+      // Keep session fallback if offline or failed
+    }
+  }
+
+  String _resolveImageUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    const defaultApiUrl = 'http://localhost:8080';
+    if (url.startsWith('/')) {
+      return '$defaultApiUrl$url';
+    }
+    return '$defaultApiUrl/$url';
+  }
+
+  Future<void> _openProfileDialog() async {
+    final current = _profile ??
+        UserProfile(
+          id: widget.session.userId,
+          email: widget.session.email,
+          fullName: widget.session.fullName,
+          role: widget.session.role,
+          permissions: widget.session.permissions,
+        );
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => ProfileDialog(
+        profile: current,
+        authService: widget.authService,
+        mediaService: widget.mediaService,
+        onProfileUpdated: (updated) {
+          setState(() => _profile = updated);
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,9 +176,17 @@ class _DashboardShellState extends State<DashboardShell> {
       onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
       destinations: destinations,
       actions: [
-        Chip(
-          avatar: const Icon(Icons.account_circle, size: 18),
+        ActionChip(
+          avatar: _profile?.avatarUrl != null && _profile!.avatarUrl!.isNotEmpty
+              ? CircleAvatar(
+                  radius: 10,
+                  backgroundImage: NetworkImage(_resolveImageUrl(_profile!.avatarUrl!)),
+                  onBackgroundImageError: (_, _) {},
+                )
+              : const Icon(Icons.account_circle, size: 18),
           label: Text(widget.session.email),
+          tooltip: 'Edit Profile (${widget.session.email})',
+          onPressed: _openProfileDialog,
           padding: EdgeInsets.zero,
           visualDensity: VisualDensity.compact,
         ),
