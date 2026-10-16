@@ -1,5 +1,7 @@
 package joppe.backend.admin.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import joppe.backend.admin.dto.CreateRoleRequest;
@@ -25,21 +27,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+@Tag(name = "Admin - RBAC", description = "Administrative endpoints for role and permission management")
 public class AdminRbacController {
 
     private final RbacManagementService rbacManagementService;
 
     @GetMapping("/roles")
+    @Operation(summary = "List all roles with assigned permissions")
     public ResponseEntity<List<RoleDto>> listRoles() {
         return ResponseEntity.ok(rbacManagementService.listRoles());
     }
 
     @GetMapping("/roles/{id}")
+    @Operation(summary = "Get role details and permissions by ID")
     public ResponseEntity<RoleDto> getRole(@PathVariable Integer id) {
         return ResponseEntity.ok(rbacManagementService.getRole(id));
     }
 
     @PostMapping("/roles")
+    @Operation(summary = "Create a new role with initial permissions")
     public ResponseEntity<RoleDto> createRole(@Valid @RequestBody CreateRoleRequest request) {
         RoleDto created = rbacManagementService.createRole(
                 request.roleName(),
@@ -50,6 +56,7 @@ public class AdminRbacController {
     }
 
     @PutMapping("/roles/{id}/permissions")
+    @Operation(summary = "Update assigned permissions for a role")
     public ResponseEntity<RoleDto> updatePermissions(
             @PathVariable Integer id,
             @Valid @RequestBody UpdateRolePermissionsRequest request
@@ -59,12 +66,14 @@ public class AdminRbacController {
     }
 
     @DeleteMapping("/roles/{id}")
+    @Operation(summary = "Delete role by ID")
     public ResponseEntity<ApiResponse> deleteRole(@PathVariable Integer id) {
         rbacManagementService.deleteRole(id);
         return ResponseEntity.ok(new ApiResponse(true, "Role deleted successfully"));
     }
 
     @GetMapping("/permissions")
+    @Operation(summary = "List all available system permissions")
     public ResponseEntity<List<PermissionDto>> listPermissions() {
         return ResponseEntity.ok(rbacManagementService.listAllPermissions());
     }

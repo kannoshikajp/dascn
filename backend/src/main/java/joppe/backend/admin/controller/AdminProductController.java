@@ -1,5 +1,7 @@
 package joppe.backend.admin.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -30,12 +32,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/admin/products")
 @RequiredArgsConstructor
+@Tag(name = "Admin - Products & Variants", description = "Administrative endpoints for multi-category products and hardware spec variants")
 public class AdminProductController {
 
     private final AdminProductService adminProductService;
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('CATALOG_READ', 'CATALOG_WRITE')")
+    @Operation(summary = "List products with search, category, brand, and active filters")
     public List<ProductResponse> listProducts(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Integer categoryId,
@@ -46,12 +50,14 @@ public class AdminProductController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('CATALOG_READ', 'CATALOG_WRITE')")
+    @Operation(summary = "Get product details by ID")
     public ProductResponse getProductById(@PathVariable UUID id) {
         return adminProductService.getProductById(id);
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('CATALOG_WRITE')")
+    @Operation(summary = "Create product with multi-category mapping and initial default variant")
     public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody CreateProductRequest request) {
         ProductResponse created = adminProductService.createProduct(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -59,6 +65,7 @@ public class AdminProductController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('CATALOG_WRITE')")
+    @Operation(summary = "Update product details and multi-category mappings")
     public ProductResponse updateProduct(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateProductRequest request) {
@@ -68,6 +75,7 @@ public class AdminProductController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('CATALOG_WRITE')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Toggle product active status")
     public void updateStatus(
             @PathVariable UUID id,
             @RequestBody UpdateProductStatusRequest request) {
@@ -77,6 +85,7 @@ public class AdminProductController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('CATALOG_WRITE')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Delete product by ID (cascades variants and category mappings)")
     public void deleteProduct(@PathVariable UUID id) {
         adminProductService.deleteProduct(id);
     }
@@ -87,12 +96,14 @@ public class AdminProductController {
 
     @GetMapping("/{productId}/variants")
     @PreAuthorize("hasAnyAuthority('CATALOG_READ', 'CATALOG_WRITE')")
+    @Operation(summary = "List all hardware spec variants for a product")
     public List<ProductVariantSummary> listVariants(@PathVariable UUID productId) {
         return adminProductService.listVariants(productId);
     }
 
     @PostMapping("/{productId}/variants")
     @PreAuthorize("hasAuthority('CATALOG_WRITE')")
+    @Operation(summary = "Create a spec variant (with JSONB hardware specs like RAM, GPU, CPU)")
     public ResponseEntity<ProductVariantSummary> createVariant(
             @PathVariable UUID productId,
             @Valid @RequestBody CreateVariantRequest request) {
@@ -102,6 +113,7 @@ public class AdminProductController {
 
     @PutMapping("/{productId}/variants/{variantId}")
     @PreAuthorize("hasAuthority('CATALOG_WRITE')")
+    @Operation(summary = "Update a spec variant (SKU, price, stock, JSONB hardware specs)")
     public ProductVariantSummary updateVariant(
             @PathVariable UUID productId,
             @PathVariable UUID variantId,
@@ -112,6 +124,7 @@ public class AdminProductController {
     @DeleteMapping("/{productId}/variants/{variantId}")
     @PreAuthorize("hasAuthority('CATALOG_WRITE')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Delete a spec variant")
     public void deleteVariant(
             @PathVariable UUID productId,
             @PathVariable UUID variantId) {

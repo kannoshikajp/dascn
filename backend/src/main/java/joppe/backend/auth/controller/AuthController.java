@@ -17,6 +17,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,11 +26,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Endpoints for user registration, login, profile, and password management")
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping("/register")
+    @Operation(summary = "Register new customer account")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(
                 request.email(),
@@ -40,6 +44,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Authenticate user with email and password")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(
                 request.email(),
@@ -50,6 +55,7 @@ public class AuthController {
 
     @GetMapping("/me")
     @PreAuthorize("hasAuthority('AUTH_ME')")
+    @Operation(summary = "Get current authenticated user profile and permissions")
     public ResponseEntity<UserProfileResponse> getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         UserProfileResponse response = authService.getProfile(userId);
@@ -58,6 +64,7 @@ public class AuthController {
 
     @PostMapping("/change-password")
     @PreAuthorize("hasAuthority('AUTH_CHANGE_PASSWORD')")
+    @Operation(summary = "Change current user password")
     public ResponseEntity<ApiResponse> changePassword(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody ChangePasswordRequest request) {

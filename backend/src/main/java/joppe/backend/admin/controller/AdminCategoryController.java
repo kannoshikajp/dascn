@@ -1,5 +1,7 @@
 package joppe.backend.admin.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import joppe.backend.admin.dto.CategoryNodeResponse;
@@ -26,11 +28,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/admin/categories")
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('CATALOG_WRITE')")
+@Tag(name = "Admin - Categories", description = "Administrative endpoints for nested category hierarchy management")
 public class AdminCategoryController {
 
     private final CategoryManagementService categoryService;
 
     @GetMapping
+    @Operation(summary = "List categories as flat list with search and status filter")
     public ResponseEntity<List<CategoryResponse>> listCategories(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean isActive
@@ -40,6 +44,7 @@ public class AdminCategoryController {
     }
 
     @GetMapping("/tree")
+    @Operation(summary = "List categories as hierarchical nested tree")
     public ResponseEntity<List<CategoryNodeResponse>> getCategoryTree(
             @RequestParam(required = false) Boolean isActive
     ) {
@@ -48,18 +53,21 @@ public class AdminCategoryController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get category by ID")
     public ResponseEntity<CategoryResponse> getCategory(@PathVariable Integer id) {
         CategoryResponse category = categoryService.getCategory(id);
         return ResponseEntity.ok(category);
     }
 
     @PostMapping
+    @Operation(summary = "Create a new category")
     public ResponseEntity<CategoryResponse> createCategory(@Valid @RequestBody CreateCategoryRequest request) {
         CategoryResponse category = categoryService.createCategory(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(category);
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update an existing category")
     public ResponseEntity<CategoryResponse> updateCategory(
             @PathVariable Integer id,
             @Valid @RequestBody UpdateCategoryRequest request
@@ -69,6 +77,7 @@ public class AdminCategoryController {
     }
 
     @PatchMapping("/{id}/status")
+    @Operation(summary = "Toggle category active status")
     public ResponseEntity<Void> updateStatus(
             @PathVariable Integer id,
             @RequestParam boolean isActive
@@ -78,6 +87,7 @@ public class AdminCategoryController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete category by ID (cascade check)")
     public ResponseEntity<Void> deleteCategory(@PathVariable Integer id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
