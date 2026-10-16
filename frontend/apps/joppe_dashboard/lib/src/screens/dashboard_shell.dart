@@ -72,7 +72,11 @@ class _DashboardShellState extends State<DashboardShell> {
         currentBody = OverviewView(
           userService: widget.userService,
           rbacService: widget.rbacService,
+          categoryService: widget.categoryService,
+          productService: widget.productService,
           onNavigateToUsers: () => setState(() => _selectedIndex = 1),
+          onNavigateToCategories: () => setState(() => _selectedIndex = 2),
+          onNavigateToProducts: () => setState(() => _selectedIndex = 3),
           onNavigateToRbac: () => setState(() => _selectedIndex = 4),
         );
         break;
