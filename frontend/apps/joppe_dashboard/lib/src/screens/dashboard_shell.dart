@@ -14,6 +14,7 @@ class DashboardShell extends StatefulWidget {
   final RbacManagementService rbacService;
   final CategoryManagementService categoryService;
   final ProductManagementService productService;
+  final MediaUploadService? mediaService;
   final VoidCallback onLogout;
 
   const DashboardShell({
@@ -24,6 +25,7 @@ class DashboardShell extends StatefulWidget {
     required this.rbacService,
     required this.categoryService,
     required this.productService,
+    this.mediaService,
     required this.onLogout,
   });
 
@@ -89,12 +91,14 @@ class _DashboardShellState extends State<DashboardShell> {
       case 2:
         currentBody = CategoriesView(
           categoryService: widget.categoryService,
+          mediaUploadService: widget.mediaService,
         );
         break;
       case 3:
         currentBody = ProductsView(
           productService: widget.productService,
           categoryService: widget.categoryService,
+          mediaUploadService: widget.mediaService,
         );
         break;
       case 4:

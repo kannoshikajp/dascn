@@ -15,6 +15,7 @@ void main() {
   final rbacService = RbacManagementService(apiClient);
   final categoryService = CategoryManagementService(apiClient);
   final productService = ProductManagementService(apiClient);
+  final mediaService = MediaUploadService(apiClient);
 
   runApp(JoppeDashboardApp(
     authService: authService,
@@ -22,6 +23,7 @@ void main() {
     rbacService: rbacService,
     categoryService: categoryService,
     productService: productService,
+    mediaService: mediaService,
   ));
 }
 
@@ -31,6 +33,7 @@ class JoppeDashboardApp extends StatefulWidget {
   final RbacManagementService rbacService;
   final CategoryManagementService categoryService;
   final ProductManagementService productService;
+  final MediaUploadService? mediaService;
   final AuthSession? initialSession;
 
   const JoppeDashboardApp({
@@ -40,6 +43,7 @@ class JoppeDashboardApp extends StatefulWidget {
     required this.rbacService,
     required this.categoryService,
     required this.productService,
+    this.mediaService,
     this.initialSession,
   });
 
@@ -78,6 +82,7 @@ class _JoppeDashboardAppState extends State<JoppeDashboardApp> {
               rbacService: widget.rbacService,
               categoryService: widget.categoryService,
               productService: widget.productService,
+              mediaService: widget.mediaService,
               onLogout: () {
                 setState(() => _session = null);
               },

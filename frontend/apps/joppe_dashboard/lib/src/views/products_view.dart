@@ -2,15 +2,19 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:joppe_core/joppe_core.dart';
 import 'package:joppe_design_system/joppe_design_system.dart';
+import '../widgets/image_upload_field.dart';
+import '../widgets/markdown_editor_field.dart';
 
 class ProductsView extends StatefulWidget {
   final ProductManagementService productService;
   final CategoryManagementService categoryService;
+  final MediaUploadService? mediaUploadService;
 
   const ProductsView({
     super.key,
     required this.productService,
     required this.categoryService,
+    this.mediaUploadService,
   });
 
   @override
@@ -125,7 +129,7 @@ class _ProductsViewState extends State<ProductsView> {
         builder: (ctx, setDialogState) => AlertDialog(
           title: const Text('Add New Product'),
           content: SizedBox(
-            width: 600,
+            width: 750,
             child: Form(
               key: formKey,
               child: SingleChildScrollView(
@@ -273,15 +277,23 @@ class _ProductsViewState extends State<ProductsView> {
                       ],
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
-                    TextFormField(
+                    ImageUploadField(
                       controller: thumbCtrl,
-                      decoration: const InputDecoration(labelText: 'Thumbnail Image URL (optional)'),
+                      mediaUploadService: widget.mediaUploadService,
+                      label: 'Thumbnail Image URL (optional)',
+                      folder: 'products',
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
                     TextFormField(
                       controller: shortDescCtrl,
                       decoration: const InputDecoration(labelText: 'Short Description'),
                       maxLines: 2,
+                    ),
+                    const SizedBox(height: JoppeSpacing.sm),
+                    MarkdownEditorField(
+                      controller: descCtrl,
+                      mediaUploadService: widget.mediaUploadService,
+                      label: 'Full Description (Markdown)',
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
                     SwitchListTile(
@@ -350,7 +362,7 @@ class _ProductsViewState extends State<ProductsView> {
         builder: (ctx, setDialogState) => AlertDialog(
           title: Text('Edit "${product.productName}"'),
           content: SizedBox(
-            width: 600,
+            width: 750,
             child: Form(
               key: formKey,
               child: SingleChildScrollView(
@@ -445,9 +457,11 @@ class _ProductsViewState extends State<ProductsView> {
                       decoration: const InputDecoration(labelText: 'Warranty (Months)'),
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
-                    TextFormField(
+                    ImageUploadField(
                       controller: thumbCtrl,
-                      decoration: const InputDecoration(labelText: 'Thumbnail Image URL'),
+                      mediaUploadService: widget.mediaUploadService,
+                      label: 'Thumbnail Image URL',
+                      folder: 'products',
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
                     TextFormField(
@@ -456,10 +470,10 @@ class _ProductsViewState extends State<ProductsView> {
                       maxLines: 2,
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
-                    TextFormField(
+                    MarkdownEditorField(
                       controller: descCtrl,
-                      decoration: const InputDecoration(labelText: 'Full Description'),
-                      maxLines: 4,
+                      mediaUploadService: widget.mediaUploadService,
+                      label: 'Full Description (Markdown)',
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
                     SwitchListTile(

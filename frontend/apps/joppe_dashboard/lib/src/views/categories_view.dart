@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:joppe_core/joppe_core.dart';
 import 'package:joppe_design_system/joppe_design_system.dart';
+import '../widgets/image_upload_field.dart';
 
 class CategoriesView extends StatefulWidget {
   final CategoryManagementService categoryService;
+  final MediaUploadService? mediaUploadService;
 
   const CategoriesView({
     super.key,
     required this.categoryService,
+    this.mediaUploadService,
   });
 
   @override
@@ -165,12 +168,11 @@ class _CategoriesViewState extends State<CategoriesView> with SingleTickerProvid
                       onChanged: (val) => setDialogState(() => selectedParent = val),
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
-                    TextFormField(
+                    ImageUploadField(
                       controller: iconCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Icon / Image URL (optional)',
-                        hintText: 'https://...',
-                      ),
+                      mediaUploadService: widget.mediaUploadService,
+                      label: 'Icon / Image URL (optional)',
+                      folder: 'categories',
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
                     SwitchListTile(
@@ -260,9 +262,11 @@ class _CategoriesViewState extends State<CategoriesView> with SingleTickerProvid
                       onChanged: (val) => setDialogState(() => selectedParent = val),
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
-                    TextFormField(
+                    ImageUploadField(
                       controller: iconCtrl,
-                      decoration: const InputDecoration(labelText: 'Icon / Image URL'),
+                      mediaUploadService: widget.mediaUploadService,
+                      label: 'Icon / Image URL',
+                      folder: 'categories',
                     ),
                     const SizedBox(height: JoppeSpacing.sm),
                     SwitchListTile(
