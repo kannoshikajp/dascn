@@ -1,5 +1,6 @@
 package joppe.backend.admin.service;
 
+import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,6 +15,7 @@ import joppe.backend.admin.dto.CategoryNodeResponse;
 import joppe.backend.admin.dto.CategoryResponse;
 import joppe.backend.admin.dto.CreateCategoryRequest;
 import joppe.backend.admin.dto.UpdateCategoryRequest;
+import joppe.backend.common.util.CsvHelper;
 import joppe.backend.domain.catalog.Category;
 import joppe.backend.domain.catalog.CategoryRepository;
 import joppe.backend.domain.catalog.ProductRepository;
@@ -76,6 +78,28 @@ public class CategoryManagementService {
                     );
                 })
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportCategoriesCsv(String search, Boolean isActive) {
+        List<CategoryResponse> categories = listCategoriesFlat(search, isActive);
+        StringBuilder sb = new StringBuilder();
+        sb.append('﻿'); // UTF-8 BOM
+        sb.append("ID,Category Name,Slug,Parent ID,Parent Name,Active,Product Count,Child Count,Created At\r\n");
+
+        for (CategoryResponse c : categories) {
+            sb.append(c.id()).append(",")
+              .append(CsvHelper.escape(c.categoryName())).append(",")
+              .append(CsvHelper.escape(c.slug())).append(",")
+              .append(c.parentId() != null ? c.parentId() : "").append(",")
+              .append(CsvHelper.escape(c.parentName())).append(",")
+              .append(c.isActive() != null && c.isActive() ? "Active" : "Inactive").append(",")
+              .append(c.productCount()).append(",")
+              .append(c.childCount()).append(",")
+              .append(CsvHelper.escape(c.createdAt())).append("\r\n");
+        }
+
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     @Transactional(readOnly = true)

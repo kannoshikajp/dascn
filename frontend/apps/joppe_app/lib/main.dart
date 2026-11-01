@@ -1,7 +1,34 @@
+import 'dart:io' if (dart.library.js_interop) 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:joppe_design_system/joppe_design_system.dart';
+import 'package:joppe_core/joppe_core.dart';
+import 'src/core/theme/app_colors.dart';
+import 'src/screens/home_screen.dart';
+import 'src/services/app_api_client.dart';
+
+class _JoppeHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) {
+        return host == 'joppe.penguinlab.org';
+      };
+  }
+}
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (!kIsWeb) {
+    HttpOverrides.global = _JoppeHttpOverrides();
+  }
+
+  const apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://joppe.penguinlab.org',
+  );
+  AppApiClient.setInstance(ApiClient(baseUrl: apiBaseUrl));
+
   runApp(const JoppeApp());
 }
 
@@ -11,93 +38,94 @@ class JoppeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Joppe Store',
+      title: 'Joppe E-Commerce',
       debugShowCheckedModeBanner: false,
-      theme: JoppeTheme.light(),
-      darkTheme: JoppeTheme.dark(),
-      themeMode: ThemeMode.system,
-      home: const CustomerHomePage(),
-    );
-  }
-}
-
-class CustomerHomePage extends StatefulWidget {
-  const CustomerHomePage({super.key});
-
-  @override
-  State<CustomerHomePage> createState() => _CustomerHomePageState();
-}
-
-class _CustomerHomePageState extends State<CustomerHomePage> {
-  int _currentIndex = 0;
-
-  static const List<JoppeNavigationDestination> _destinations = [
-    JoppeNavigationDestination(
-      icon: Icon(Icons.storefront_outlined),
-      selectedIcon: Icon(Icons.storefront),
-      label: 'Catalog',
-    ),
-    JoppeNavigationDestination(
-      icon: Icon(Icons.build_circle_outlined),
-      selectedIcon: Icon(Icons.build_circle),
-      label: 'PC Builder',
-    ),
-    JoppeNavigationDestination(
-      icon: Icon(Icons.shopping_cart_outlined),
-      selectedIcon: Icon(Icons.shopping_cart),
-      label: 'Cart',
-    ),
-    JoppeNavigationDestination(
-      icon: Icon(Icons.person_outline),
-      selectedIcon: Icon(Icons.person),
-      label: 'Profile',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return JoppeResponsiveScaffold(
-      title: 'Joppe Store',
-      selectedIndex: _currentIndex,
-      onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
-      destinations: _destinations,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search),
-          onPressed: () {},
-          tooltip: 'Search products',
+      theme: ThemeData(
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: AppColors.navyBackground,
+        colorScheme: const ColorScheme.light(
+          primary: AppColors.primaryBlue,
+          onPrimary: AppColors.textOnAction,
+          surface: AppColors.surfaceCard,
+          onSurface: AppColors.textPrimary,
+          outline: AppColors.borderLight,
         ),
-      ],
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _destinations[_currentIndex].icon is Icon
-                  ? (_destinations[_currentIndex].selectedIcon as Icon).icon
-                  : Icons.store,
-              size: 64,
-              color: colorScheme.primary,
-            ),
-            const SizedBox(height: JoppeSpacing.md),
-            Text(
-              _destinations[_currentIndex].label,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: JoppeSpacing.xs),
-            Text(
-              'Google Material 3 design system initialized.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.primaryDark,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          iconTheme: IconThemeData(color: AppColors.textPrimary),
+          titleTextStyle: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        cardTheme: CardThemeData(
+          color: AppColors.surfaceCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          elevation: 0,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryBlue,
+            foregroundColor: AppColors.textOnAction,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            elevation: 0,
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.primaryBlue,
+            side: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            elevation: 0,
+          ),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: AppColors.surfaceCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          titleTextStyle: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        bottomSheetTheme: const BottomSheetThemeData(
+          backgroundColor: AppColors.surfaceCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+        ),
+        buttonTheme: ButtonThemeData(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.searchFieldBg,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.borderLight, width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.borderLight, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: AppColors.borderAccent, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        dividerTheme: const DividerThemeData(
+          color: AppColors.borderLight,
+          thickness: 1,
+          space: 1,
+        ),
+        useMaterial3: true,
       ),
+      home: const HomeScreen(),
     );
   }
 }
+
+typedef JoppeEcomApp = JoppeApp;

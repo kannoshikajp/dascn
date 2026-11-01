@@ -42,6 +42,12 @@ public class ProductVariant {
     @Column(name = "variant_name", nullable = false, length = 255)
     private String variantName;
 
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
+    private String thumbnailUrl;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "attributes", columnDefinition = "jsonb")
     private String attributes;

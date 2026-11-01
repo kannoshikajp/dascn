@@ -3,6 +3,7 @@ package joppe.backend.auth.config;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -95,7 +97,8 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.cors.allowed-origins:http://localhost:8888,http://localhost:3000,http://127.0.0.1:8888,http://127.0.0.1:3000}") String allowedOrigins) {
+            @Value("${app.cors.allowed-origins:http://localhost:8888,http://localhost:3000,http://127.0.0.1:8888,http://127.0.0.1:3000,https://joppe-dash.vercel.app,https://joppe-dashboard.vercel.app,https://joppe.penguinlab.org}") String allowedOrigins,
+            @Value("${app.cors.allowed-origin-patterns:http://localhost:*,http://127.0.0.1:*,https://*.vercel.app,https://*.penguinlab.org}") String allowedOriginPatterns) {
         CorsConfiguration configuration = new CorsConfiguration();
 
         List<String> origins = Arrays.stream(allowedOrigins.split(","))
@@ -103,11 +106,16 @@ public class SecurityConfig {
                 .filter(s -> !s.isEmpty())
                 .toList();
 
+        List<String> originPatterns = Arrays.stream(allowedOriginPatterns.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+
         configuration.setAllowedOrigins(origins);
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        configuration.setAllowedOriginPatterns(originPatterns);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setExposedHeaders(List.of("Authorization", "Content-Type", "Content-Disposition"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -127,9 +135,35 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            String uri = request.getRequestURI();
+                            String msg = uri.contains("/live")
+                                    ? "Cannot access /live: Authentication required"
+                                    : "Authentication required: " + authException.getMessage();
+                            response.getWriter().write("""
+                                    {"status":401,"error":"Unauthorized","message":"%s","path":"%s"}
+                                    """.formatted(msg, uri));
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            String uri = request.getRequestURI();
+                            String msg = uri.contains("/live")
+                                    ? "Cannot access /live: Insufficient permissions"
+                                    : "Access denied: " + accessDeniedException.getMessage();
+                            response.getWriter().write("""
+                                    {"status":403,"error":"Forbidden","message":"%s","path":"%s"}
+                                    """.formatted(msg, uri));
+                        })
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
+                                "/live",
+                                "/api/v1/live",
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/login",
                                 "/api/v1/categories/**",
@@ -139,6 +173,9 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/uploads/**",
+                                "/api/v1/payment/vnpay/ipn",
+                                "/api/v1/payment/vnpay/return",
+                                "/api/v1/payment/vnpay/qr",
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()

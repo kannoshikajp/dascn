@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Orders &amp; POS Management API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Admin &mdash; Orders &amp; POS Management API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/admin/orders</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.admin.controller.AdminOrderController</code></p>
+    <p><strong>Security:</strong> All endpoints require <code>ORDER_MANAGE</code> authority</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>Order State Rules &amp; Business Invariants</h2>
+      <ul>
+        <li><strong>Sequential Status Transitions:</strong>
+          <code>ACCEPTED</code> &rarr; <code>PACKAGING</code> &rarr; <code>DELIVERY</code> &rarr; <code>SHIPPED</code> &rarr; <code>REFUND</code> (optional).
+          Cannot move backward.
+        </li>
+        <li><strong>Payment Status:</strong> <code>PAID</code> &rarr; <code>REFUND</code>. Cannot regress to <code>UNPAID</code>.</li>
+        <li><strong>10-Day Refund Window:</strong> An order cannot be refunded if more than 10 calendar days have passed since payment or completion.</li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>1. List All Orders</h2>
+      <p>Lists orders with status, payment status, and keyword search filters.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/orders</code></li>
+        <li><strong>Security:</strong> Requires <code>ORDER_MANAGE</code></li>
+      </ul>
+
+      <h3>Query Parameters</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>status</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Filter by order status (<code>ACCEPTED</code>, <code>PACKAGING</code>, <code>DELIVERY</code>, <code>SHIPPED</code>, <code>REFUND</code>, <code>CANCELLED</code>)</td>
+          </tr>
+          <tr>
+            <td><code>paymentStatus</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Filter by payment status (<code>UNPAID</code>, <code>PAID</code>, <code>REFUND</code>)</td>
+          </tr>
+          <tr>
+            <td><code>search</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Case-insensitive search matching order code, recipient name, or phone number</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns array of <code>OrderSummaryResponse</code> objects.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Get Order Detail</h2>
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/orders/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>ORDER_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns full <code>OrderResponse</code> object with line items and customer details.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Update Order Status</h2>
+      <p>Advances the order state forward.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>PATCH</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/orders/{id}/status</code></li>
+        <li><strong>Security:</strong> Requires <code>ORDER_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "status": "PACKAGING"
+}</code></pre>
+
+      <h3>Lifecycle Actions</h3>
+      <ul>
+        <li>Transitioning to <code>SHIPPED</code>: calls <code>deductStockOnFulfillment</code> for all line items.</li>
+        <li>Transitioning to <code>CANCELLED</code>: calls <code>releaseStock</code> for all reserved line items.</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>OrderResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. Update Payment Status</h2>
+      <ul>
+        <li><strong>Method:</strong> <code>PATCH</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/orders/{id}/payment-status</code></li>
+        <li><strong>Security:</strong> Requires <code>ORDER_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "paymentStatus": "PAID"
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>OrderResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>5. Create Order on Behalf of Customer / Walk-in POS</h2>
+      <p>Creates an order at the store cashier counter (POS). Auto-provisions a customer account if not yet registered so warranty history is tracked.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/orders</code></li>
+        <li><strong>Security:</strong> Requires <code>ORDER_MANAGE</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "userId": null,
+  "customerEmail": "walkin_customer@gmail.com",
+  "recipientName": "Tran Van B",
+  "recipientPhone": "0912345678",
+  "shippingAddress": "Store Counter Pickup (POS)",
+  "customerNote": "Paid cash at store counter",
+  "shippingFee": 0.0,
+  "orderStatus": "SHIPPED",
+  "paymentStatus": "PAID",
+  "items": [
+    {
+      "variantId": "22222222-3333-4444-5555-666666666666",
+      "quantity": 1
+    }
+  ]
+}</code></pre>
+
+      <h3>Success Response (201 Created)</h3>
+      <p>Returns created <code>OrderResponse</code>.</p>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

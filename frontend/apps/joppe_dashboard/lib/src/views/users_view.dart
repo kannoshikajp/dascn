@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:joppe_core/joppe_core.dart';
 import 'package:joppe_design_system/joppe_design_system.dart';
+import '../localization/dashboard_localizations.dart';
+import 'users/molecules/create_user_dialog.dart';
+import 'users/molecules/delete_user_dialog.dart';
+import 'users/molecules/edit_user_dialog.dart';
+import 'users/molecules/user_filter_bar.dart';
+import 'users/molecules/user_notification_dialog.dart';
+import 'users/organisms/user_kpi_row.dart';
+import 'users/organisms/user_table_view.dart';
 
+/// Screen: User accounts management view following Atomic Design.
+/// Displays KPI metrics, flexible role/status filters, responsive data table, and CRUD dialogs.
 class UsersView extends StatefulWidget {
   final UserManagementService userService;
   final RbacManagementService rbacService;
@@ -17,11 +28,15 @@ class UsersView extends StatefulWidget {
 }
 
 class _UsersViewState extends State<UsersView> {
-  List<UserSummary> _users = [];
+  final TextEditingController _searchController = TextEditingController();
+
+  List<UserSummary> _allUsers = [];
+  List<UserSummary> _filteredUsers = [];
   List<RoleItem> _roles = [];
+
   bool _isLoading = true;
   String? _error;
-  String _searchQuery = '';
+
   int? _selectedRoleId;
   bool? _selectedActiveFilter;
 
@@ -31,6 +46,12 @@ class _UsersViewState extends State<UsersView> {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
@@ -38,16 +59,16 @@ class _UsersViewState extends State<UsersView> {
     });
 
     try {
-      final roles = await widget.rbacService.listRoles();
-      final users = await widget.userService.listUsers(
-        search: _searchQuery.isEmpty ? null : _searchQuery,
-        roleId: _selectedRoleId,
-        isActive: _selectedActiveFilter,
-      );
+      final rolesFuture = widget.rbacService.listRoles();
+      final usersFuture = widget.userService.listUsers();
+
+      final results = await Future.wait([rolesFuture, usersFuture]);
       if (mounted) {
+        final rawRoles = results[0] as List<RoleItem>;
         setState(() {
-          _roles = roles;
-          _users = users;
+          _roles = rawRoles.where((r) => !r.roleName.toUpperCase().contains('NON_LOGIN')).toList();
+          _allUsers = results[1] as List<UserSummary>;
+          _applyFilters();
           _isLoading = false;
         });
       }
@@ -61,355 +82,208 @@ class _UsersViewState extends State<UsersView> {
     }
   }
 
-  Future<void> _toggleStatus(UserSummary user) async {
-    try {
-      await widget.userService.updateStatus(user.id, !user.isActive);
-      _loadData();
-    } catch (e) {
-      _showSnackbar('Failed to update status: $e');
-    }
+  void _applyFilters() {
+    final query = _searchController.text.trim().toLowerCase();
+
+    _filteredUsers = _allUsers.where((u) {
+      // Role filter
+      if (_selectedRoleId != null && u.roleId != _selectedRoleId) {
+        return false;
+      }
+
+      // Status filter
+      if (_selectedActiveFilter != null && u.isActive != _selectedActiveFilter) {
+        return false;
+      }
+
+      // Query filter
+      if (query.isNotEmpty) {
+        final nameMatch = u.fullName.toLowerCase().contains(query);
+        final emailMatch = u.email.toLowerCase().contains(query);
+        final phoneMatch = u.phoneNumber?.toLowerCase().contains(query) ?? false;
+        final roleMatch = u.roleName.toLowerCase().contains(query);
+        return nameMatch || emailMatch || phoneMatch || roleMatch;
+      }
+
+      return true;
+    }).toList();
   }
 
-  Future<void> _deleteUser(UserSummary user) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete User'),
-        content: Text('Are you sure you want to permanently delete "${user.fullName}" (${user.email})?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+  void _onSearchChanged() {
+    setState(() {
+      _applyFilters();
+    });
+  }
 
-    if (confirmed == true) {
-      try {
-        await widget.userService.deleteUser(user.id);
-        _showSnackbar('User deleted');
-        _loadData();
-      } catch (e) {
-        _showSnackbar('Failed to delete user: $e');
-      }
+  void _onSelectRole(int? roleId) {
+    setState(() {
+      _selectedRoleId = roleId;
+      _applyFilters();
+    });
+  }
+
+  void _onSelectStatus(bool? isActive) {
+    setState(() {
+      _selectedActiveFilter = isActive;
+      _applyFilters();
+    });
+  }
+
+  void _onResetFilters() {
+    setState(() {
+      _searchController.clear();
+      _selectedRoleId = null;
+      _selectedActiveFilter = null;
+      _applyFilters();
+    });
+  }
+
+  Future<void> _toggleStatus(UserSummary user) async {
+    final newStatus = !user.isActive;
+    try {
+      await widget.userService.updateStatus(user.id, newStatus);
+      _showNotification(context.l10n.statusUpdatedSuccess, type: NotificationType.success);
+      _loadData();
+    } catch (e) {
+      _showNotification(
+        e.toString().replaceFirst('ApiException: ', ''),
+        type: NotificationType.error,
+      );
     }
   }
 
   void _showCreateDialog() {
-    final emailCtrl = TextEditingController();
-    final passCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController();
-    int selectedRole = _roles.isNotEmpty ? _roles.first.id : 1;
-    final formKey = GlobalKey<FormState>();
-
-    showDialog(
+    showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Add New User'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: emailCtrl,
-                    decoration: const InputDecoration(labelText: 'Email Address'),
-                    validator: (v) => v == null || !v.contains('@') ? 'Valid email required' : null,
-                  ),
-                  const SizedBox(height: JoppeSpacing.sm),
-                  TextFormField(
-                    controller: passCtrl,
-                    decoration: const InputDecoration(labelText: 'Password'),
-                    obscureText: true,
-                    validator: (v) => v == null || v.length < 6 ? 'Min 6 characters' : null,
-                  ),
-                  const SizedBox(height: JoppeSpacing.sm),
-                  TextFormField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Full Name'),
-                    validator: (v) => v == null || v.isEmpty ? 'Full name required' : null,
-                  ),
-                  const SizedBox(height: JoppeSpacing.sm),
-                  TextFormField(
-                    controller: phoneCtrl,
-                    decoration: const InputDecoration(labelText: 'Phone Number (optional)'),
-                  ),
-                  const SizedBox(height: JoppeSpacing.sm),
-                  DropdownButtonFormField<int>(
-                    initialValue: selectedRole,
-                    decoration: const InputDecoration(labelText: 'Role'),
-                    items: _roles
-                        .map((r) => DropdownMenuItem(value: r.id, child: Text(r.roleName)))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setDialogState(() => selectedRole = val);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () async {
-                if (!formKey.currentState!.validate()) return;
-                try {
-                  await widget.userService.createUser(
-                    email: emailCtrl.text.trim(),
-                    password: passCtrl.text,
-                    fullName: nameCtrl.text.trim(),
-                    phoneNumber: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
-                    roleId: selectedRole,
-                  );
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  _showSnackbar('User created successfully');
-                  _loadData();
-                } catch (e) {
-                  _showSnackbar('Error creating user: $e');
-                }
-              },
-              child: const Text('Create User'),
-            ),
-          ],
-        ),
+      barrierDismissible: false,
+      builder: (_) => CreateUserDialog(
+        userService: widget.userService,
+        roles: _roles,
+        onUserCreated: () {
+          _showNotification(context.l10n.userCreatedSuccess, type: NotificationType.success);
+          _loadData();
+        },
       ),
     );
   }
 
   void _showEditDialog(UserSummary user) {
-    final nameCtrl = TextEditingController(text: user.fullName);
-    final phoneCtrl = TextEditingController(text: user.phoneNumber ?? '');
-    int selectedRole = user.roleId;
-    bool isActive = user.isActive;
-    final formKey = GlobalKey<FormState>();
-
-    showDialog(
+    showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Edit ${user.email}'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Full Name'),
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: JoppeSpacing.sm),
-                  TextFormField(
-                    controller: phoneCtrl,
-                    decoration: const InputDecoration(labelText: 'Phone Number'),
-                  ),
-                  const SizedBox(height: JoppeSpacing.sm),
-                  DropdownButtonFormField<int>(
-                    initialValue: _roles.any((r) => r.id == selectedRole)
-                        ? selectedRole
-                        : (_roles.isNotEmpty ? _roles.first.id : 1),
-                    decoration: const InputDecoration(labelText: 'Role'),
-                    items: _roles
-                        .map((r) => DropdownMenuItem(value: r.id, child: Text(r.roleName)))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setDialogState(() => selectedRole = val);
-                    },
-                  ),
-                  const SizedBox(height: JoppeSpacing.sm),
-                  SwitchListTile(
-                    title: const Text('Account Active'),
-                    value: isActive,
-                    onChanged: (val) => setDialogState(() => isActive = val),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () async {
-                if (!formKey.currentState!.validate()) return;
-                try {
-                  await widget.userService.updateUser(
-                    id: user.id,
-                    fullName: nameCtrl.text.trim(),
-                    phoneNumber: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
-                    roleId: selectedRole,
-                    isActive: isActive,
-                  );
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  _showSnackbar('User updated successfully');
-                  _loadData();
-                } catch (e) {
-                  _showSnackbar('Error updating user: $e');
-                }
-              },
-              child: const Text('Save Changes'),
-            ),
-          ],
-        ),
+      barrierDismissible: false,
+      builder: (_) => EditUserDialog(
+        user: user,
+        roles: _roles,
+        userService: widget.userService,
+        onUserUpdated: () {
+          _showNotification(context.l10n.userUpdatedSuccess, type: NotificationType.success);
+          _loadData();
+        },
       ),
     );
   }
 
-  void _showSnackbar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-    }
+  void _showDeleteDialog(UserSummary user) {
+    showDialog<bool>(
+      context: context,
+      builder: (_) => DeleteUserDialog(
+        user: user,
+        userService: widget.userService,
+        onUserDeleted: () {
+          _showNotification(context.l10n.userDeletedSuccess, type: NotificationType.success);
+          _loadData();
+        },
+      ),
+    );
+  }
+
+  void _showNotification(String msg, {NotificationType type = NotificationType.success}) {
+    if (!mounted) return;
+    UserNotificationDialog.show(
+      context: context,
+      message: msg,
+      type: type,
+    );
+  }
+
+  String _formatDate(DateTime? dt) {
+    if (dt == null) return '—';
+    return DateFormat('yyyy-MM-dd HH:mm').format(dt.toLocal());
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
+
+    // Calculate filter count metrics
+    final totalCount = _allUsers.length;
+    final activeCount = _allUsers.where((u) => u.isActive).length;
+    final suspendedCount = _allUsers.where((u) => !u.isActive).length;
+    final roleCounts = <int, int>{};
+    for (final u in _allUsers) {
+      roleCounts[u.roleId] = (roleCounts[u.roleId] ?? 0) + 1;
+    }
 
     return Padding(
       padding: const EdgeInsets.all(JoppeSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Filter Toolbar
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(JoppeSpacing.md),
-              child: Wrap(
-                spacing: JoppeSpacing.md,
-                runSpacing: JoppeSpacing.sm,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                alignment: WrapAlignment.spaceBetween,
-                children: [
-                  SizedBox(
-                    width: 260,
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        hintText: 'Search by name or email...',
-                        prefixIcon: Icon(Icons.search),
-                        isDense: true,
-                      ),
-                      onChanged: (val) {
-                        _searchQuery = val;
-                        _loadData();
-                      },
-                    ),
-                  ),
-                  DropdownButton<int?>(
-                    value: _selectedRoleId,
-                    hint: const Text('All Roles'),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('All Roles')),
-                      ..._roles.map((r) => DropdownMenuItem(value: r.id, child: Text(r.roleName))),
-                    ],
-                    onChanged: (val) {
-                      setState(() => _selectedRoleId = val);
-                      _loadData();
-                    },
-                  ),
-                  DropdownButton<bool?>(
-                    value: _selectedActiveFilter,
-                    hint: const Text('All Status'),
-                    items: const [
-                      DropdownMenuItem(value: null, child: Text('All Status')),
-                      DropdownMenuItem(value: true, child: Text('Active Only')),
-                      DropdownMenuItem(value: false, child: Text('Suspended Only')),
-                    ],
-                    onChanged: (val) {
-                      setState(() => _selectedActiveFilter = val);
-                      _loadData();
-                    },
-                  ),
-                  FilledButton.icon(
-                    onPressed: _showCreateDialog,
-                    icon: const Icon(Icons.person_add),
-                    label: const Text('Add User'),
-                  ),
-                ],
-              ),
-            ),
+          // KPI summary row
+          UserKpiRow(users: _allUsers),
+          const SizedBox(height: JoppeSpacing.md),
+
+          // Search and filter toolbar
+          UserFilterBar(
+            searchController: _searchController,
+            roles: _roles,
+            selectedRoleId: _selectedRoleId,
+            selectedActiveFilter: _selectedActiveFilter,
+            onSelectRole: _onSelectRole,
+            onSelectStatus: _onSelectStatus,
+            onSearchChanged: _onSearchChanged,
+            onReset: _onResetFilters,
+            onRefresh: _loadData,
+            onAddUser: _showCreateDialog,
+            totalCount: totalCount,
+            activeCount: activeCount,
+            suspendedCount: suspendedCount,
+            roleCounts: roleCounts,
           ),
           const SizedBox(height: JoppeSpacing.md),
 
-          // User List / Table
+          // Main data view
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? Center(child: Text('Error: $_error'))
-                    : _users.isEmpty
-                        ? const Center(child: Text('No users found.'))
-                        : ListView.separated(
-                            itemCount: _users.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: JoppeSpacing.xs),
-                            itemBuilder: (context, idx) {
-                              final u = _users[idx];
-                              return Card(
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: u.roleName.contains('ADMIN')
-                                        ? colorScheme.primaryContainer
-                                        : colorScheme.surfaceContainerHigh,
-                                    child: Text(
-                                      u.fullName.isNotEmpty
-                                          ? u.fullName.substring(0, 1).toUpperCase()
-                                          : 'U',
-                                      style: TextStyle(
-                                        color: u.roleName.contains('ADMIN')
-                                            ? colorScheme.onPrimaryContainer
-                                            : colorScheme.onSurface,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  title: Row(
-                                    children: [
-                                      Text(u.fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                      const SizedBox(width: JoppeSpacing.xs),
-                                      Chip(
-                                        label: Text(
-                                          u.roleName,
-                                          style: const TextStyle(fontSize: 11),
-                                        ),
-                                        padding: EdgeInsets.zero,
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                    ],
-                                  ),
-                                  subtitle: Text('${u.email}${u.phoneNumber != null ? " • ${u.phoneNumber}" : ""}'),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Tooltip(
-                                        message: u.isActive ? 'Active (click to suspend)' : 'Suspended (click to activate)',
-                                        child: Switch(
-                                          value: u.isActive,
-                                          onChanged: (_) => _toggleStatus(u),
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.edit_outlined),
-                                        onPressed: () => _showEditDialog(u),
-                                        tooltip: 'Edit User',
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline),
-                                        color: colorScheme.error,
-                                        onPressed: () => _deleteUser(u),
-                                        tooltip: 'Delete User',
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.error_outline, size: 48, color: cs.error),
+                            const SizedBox(height: JoppeSpacing.sm),
+                            Text(
+                              _error!,
+                              style: TextStyle(color: cs.error, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: JoppeSpacing.md),
+                            FilledButton.tonalIcon(
+                              onPressed: _loadData,
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: Text(l10n.refreshUsersTooltip),
+                            ),
+                          ],
+                        ),
+                      )
+                    : UserTableView(
+                        users: _filteredUsers,
+                        onEditUser: _showEditDialog,
+                        onToggleStatus: _toggleStatus,
+                        onDeleteUser: _showDeleteDialog,
+                        formatDate: _formatDate,
+                      ),
           ),
         ],
       ),

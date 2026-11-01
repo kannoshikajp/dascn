@@ -20,12 +20,7 @@ public class ProductService {
             Integer categoryId,
             Integer brandId,
             String productName,
-            String slug,
-            String shortDescription,
-            String description,
-            String specifications,
-            int warrantyMonths,
-            String thumbnailUrl) {
+            String slug) {
 
         if (categoryId != null && !categoryRepository.existsById(categoryId)) {
             throw new IllegalArgumentException("Category not found with ID: " + categoryId);
@@ -37,16 +32,17 @@ public class ProductService {
             throw new IllegalArgumentException("Product slug already exists: " + slug);
         }
 
+        String sku = slug.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+        if (sku.isBlank()) {
+            sku = "PROD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+
         Product product = Product.builder()
                 .categoryId(categoryId)
                 .brandId(brandId)
                 .productName(productName)
+                .sku(sku)
                 .slug(slug)
-                .shortDescription(shortDescription)
-                .description(description)
-                .specifications(specifications)
-                .warrantyMonths(warrantyMonths)
-                .thumbnailUrl(thumbnailUrl)
                 .isActive(true)
                 .build();
 

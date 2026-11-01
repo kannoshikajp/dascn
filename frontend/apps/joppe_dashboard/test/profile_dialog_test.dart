@@ -85,7 +85,6 @@ void main() {
 
     expect(find.text('System Administrator'), findsWidgets);
     expect(find.text('admin@joppe.vn'), findsWidgets);
-    expect(find.text('ROLE_ADMIN'), findsWidgets);
     expect(find.text('Profile Details'), findsOneWidget);
     expect(find.text('Security'), findsOneWidget);
     expect(find.text('Save Profile'), findsOneWidget);

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Customer Orders &amp; Checkout API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Customer Orders &amp; Checkout API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/orders</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.domain.order.OrderController</code></p>
+    <p><strong>Security:</strong> Requires <code>ORDER_CREATE</code> or <code>ORDER_READ_OWN</code></p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>Business Flow &amp; State Machine</h2>
+      <ul>
+        <li><strong>Order Status Lifecycle:</strong>
+          <code>ACCEPTED</code> &rarr; <code>PACKAGING</code> &rarr; <code>DELIVERY</code> &rarr; <code>SHIPPED</code> &rarr; <code>REFUND</code> (optional).
+          Transitions advance step-by-step and cannot regress to lower states.
+        </li>
+        <li><strong>Online Orders:</strong> Initial status is automatically set to <code>ACCEPTED</code> with payment status <code>PAID</code>. Cannot regress to <code>UNPAID</code>.</li>
+        <li><strong>Refund Eligibility Rule:</strong> An order cannot be refunded if more than 10 calendar days have elapsed since the payment date or successful delivery date (<code>SHIPPED</code>/<code>DELIVERED</code>).</li>
+        <li><strong>Atomic Stock Management:</strong> On checkout, items execute <code>reserveStock</code>. On cancellation, reserved stock is released. On physical shipment/handover, physical stock is deducted.</li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>1. Checkout / Place Order</h2>
+      <p>Places an order from the active shopping cart (or explicitly provided variant items), validates stock, reserves inventory, and generates order code <code>ORD-YYYYMMDD-XXXXX</code>.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/orders/checkout</code></li>
+        <li><strong>Security:</strong> Requires <code>ORDER_CREATE</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "recipientName": "Nguyen Van A",
+  "recipientPhone": "0901234567",
+  "shippingAddress": "123 Tech Street, Ward 1, District 3, Ho Chi Minh City",
+  "customerNote": "Call before delivery",
+  "shippingFee": 50000.00,
+  "items": [
+    {
+      "variantId": "22222222-3333-4444-5555-666666666666",
+      "quantity": 1
+    }
+  ]
+}</code></pre>
+
+      <h3>Success Response (201 Created)</h3>
+      <pre><code>{
+  "id": "77777777-8888-9999-aaaa-bbbbbbbbbbbb",
+  "orderCode": "ORD-20261031-84920",
+  "orderChannel": "ONLINE",
+  "orderStatus": "ACCEPTED",
+  "paymentStatus": "PAID",
+  "recipientName": "Nguyen Van A",
+  "recipientPhone": "0901234567",
+  "shippingAddress": "123 Tech Street, Ward 1, District 3, Ho Chi Minh City",
+  "subtotalAmount": 30990000.00,
+  "discountAmount": 0.00,
+  "shippingFee": 50000.00,
+  "finalAmount": 31040000.00,
+  "customerNote": "Call before delivery",
+  "createdAt": "2026-10-31T08:00:00.000Z",
+  "items": [
+    {
+      "id": "88888888-9999-aaaa-bbbb-cccccccccccc",
+      "variantId": "22222222-3333-4444-5555-666666666666",
+      "productName": "ASUS ROG Strix RTX 4080 Super",
+      "variantName": "16GB OC Edition Black",
+      "sku": "ROG-STRIX-RTX4080S-O16G",
+      "thumbnailUrl": "/uploads/products/rtx4080_thumb.webp",
+      "unitPrice": 30990000.00,
+      "quantity": 1,
+      "itemTotal": 30990000.00
+    }
+  ]
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Customer Order History</h2>
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/orders/my</code></li>
+        <li><strong>Security:</strong> Requires <code>ORDER_READ_OWN</code></li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns an array of <code>OrderSummaryResponse</code> objects.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Customer Order Detail</h2>
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/orders/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>ORDER_READ_OWN</code> (ownership verified)</li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns full <code>OrderResponse</code> object with line items.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. Customer Cancel Order</h2>
+      <p>Cancels a pending order and releases reserved warehouse inventory.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/orders/{id}/cancel</code></li>
+        <li><strong>Security:</strong> Requires <code>ORDER_READ_OWN</code> (must be in <code>ACCEPTED</code> or <code>PENDING</code> state)</li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>OrderResponse</code> with <code>orderStatus = CANCELLED</code>.</p>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

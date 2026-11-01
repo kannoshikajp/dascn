@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payment Gateway &amp; VNPAY Integration API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Payment Gateway &amp; VNPAY Integration API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/payment/vnpay</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.domain.order.vnpay.VnPayPaymentController</code></p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. Generate VNPAY Checkout URL</h2>
+      <p>Builds a signed VNPay payment gateway URL with HMAC-SHA512 checksum and creates a pending payment intent.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/payment/vnpay/create</code></li>
+        <li><strong>Security:</strong> Authenticated (<code>PAYMENT_PROCESS</code>, <code>ORDER_CREATE</code>, or staff/admin)</li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "orderId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "bankCode": "NCB",
+  "returnUrl": "https://joppe.penguinlab.org/api/v1/payment/vnpay/return"
+}</code></pre>
+
+      <h3>Success Response (201 Created)</h3>
+      <pre><code>{
+  "paymentId": "550e8400-e29b-41d4-a716-446655440000",
+  "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=1500000000&amp;vnp_Command=pay&amp;vnp_TmnCode=H04KMMWQ...",
+  "orderCode": "ORD-20261031-001",
+  "txnRef": "ORD-20261031-001_849201",
+  "amount": 15000000.00,
+  "qrCodeUrl": "/api/v1/payment/vnpay/qr?paymentUrl=https%3A%2F%2Fsandbox.vnpayment.vn...",
+  "qrCodeBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFAAQAAAAC64r5dAAAB..."
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Backend QR Code Image Stream</h2>
+      <p>Generates and streams raw PNG image bytes for a payment URL or payment record on the backend.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/payment/vnpay/qr</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+        <li><strong>Content-Type:</strong> <code>image/png</code></li>
+        <li><strong>Query Parameters:</strong>
+          <ul>
+            <li><code>paymentUrl</code> (optional): Encoded payment gateway URL to encode into QR matrix</li>
+            <li><code>paymentId</code> (optional UUID): Payment record identifier</li>
+            <li><code>size</code> (optional integer, default <code>300</code>): Width and height in pixels</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. VNPAY Instant Payment Notification (IPN Webhook)</h2>
+      <p>Server-to-server webhook invoked asynchronously by VNPay to confirm transaction status.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/payment/vnpay/ipn</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+      </ul>
+
+      <h3>Webhook Responses</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th>RspCode</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Success</td><td><code>00</code></td><td>Confirm Success</td></tr>
+          <tr><td>Order Not Found</td><td><code>01</code></td><td>Order not Found</td></tr>
+          <tr><td>Already Confirmed</td><td><code>02</code></td><td>Order already confirmed</td></tr>
+          <tr><td>Invalid Amount</td><td><code>04</code></td><td>Invalid Amount</td></tr>
+          <tr><td>Checksum Failed</td><td><code>97</code></td><td>Invalid Checksum</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. VNPAY Return URL Redirect Handler</h2>
+      <p>Handles browser redirect when customer finishes or cancels payment on the gateway.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/payment/vnpay/return</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+        <li><strong>Content Negotiation:</strong> Returns JSON result or HTML popup closer page depending on <code>Accept</code> header.</li>
+      </ul>
+
+      <h3>JSON Response (200 OK)</h3>
+      <pre><code>{
+  "success": true,
+  "orderCode": "ORD-20261031-001_849201",
+  "transactionNo": "14226112",
+  "bankCode": "NCB",
+  "amount": 15000000.00,
+  "responseCode": "00",
+  "message": "Giao dịch thành công"
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>5. Sandbox Test Credentials</h2>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <tbody>
+          <tr><td><strong>Test Bank</strong></td><td>NCB (National Citizen Bank)</td></tr>
+          <tr><td><strong>Test Card Number</strong></td><td><code>9704198526191432198</code></td></tr>
+          <tr><td><strong>Card Holder</strong></td><td><code>NGUYEN VAN A</code></td></tr>
+          <tr><td><strong>Issue Date</strong></td><td><code>07/15</code></td></tr>
+          <tr><td><strong>OTP Code</strong></td><td><code>123456</code></td></tr>
+          <tr><td><strong>Gateway URL</strong></td><td><code>https://sandbox.vnpayment.vn/paymentv2/vpcpay.html</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

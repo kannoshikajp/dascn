@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:joppe_core/joppe_core.dart';
 import 'package:joppe_design_system/joppe_design_system.dart';
+import 'media_library_dialog.dart';
 
 class ImageUploadField extends StatefulWidget {
   final TextEditingController controller;
@@ -145,9 +146,33 @@ class _ImageUploadFieldState extends State<ImageUploadField> {
                   : const Icon(Icons.cloud_upload_outlined, size: 18),
               label: Text(_isUploading ? 'Uploading...' : 'Upload'),
               style: FilledButton.styleFrom(
-                minimumSize: const Size(110, 48),
+                minimumSize: const Size(100, 48),
               ),
             ),
+            if (widget.mediaUploadService != null) ...[
+              const SizedBox(width: JoppeSpacing.xs),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final selected = await MediaLibraryDialog.show(
+                    context,
+                    mediaUploadService: widget.mediaUploadService!,
+                    multiSelect: false,
+                    initialFolder: widget.folder,
+                    selectedUrls: widget.controller.text.isNotEmpty ? [widget.controller.text.trim()] : [],
+                  );
+                  if (selected != null && selected.isNotEmpty) {
+                    widget.controller.text = selected.first.fileUrl;
+                    widget.onChanged?.call(selected.first.fileUrl);
+                    setState(() {});
+                  }
+                },
+                icon: const Icon(Icons.photo_library_outlined, size: 18),
+                label: const Text('Library'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(100, 48),
+                ),
+              ),
+            ],
           ],
         ),
         if (_uploadError != null) ...[

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Customer Address Book API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Customer Address Book API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/addresses</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.domain.user.UserAddressController</code></p>
+    <p><strong>Security:</strong> Requires <code>ADDRESS_MANAGE</code> authority. User identity resolved from JWT subject.</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. List Shipping Addresses</h2>
+      <p>Lists all saved delivery addresses for the authenticated customer.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/addresses</code></li>
+        <li><strong>Security:</strong> Requires <code>ADDRESS_MANAGE</code></li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>[
+  {
+    "id": "33333333-4444-5555-6666-777777777777",
+    "userId": "a50c82f8-0f0e-436b-a253-12502690d796",
+    "recipientName": "Nguyen Van A",
+    "recipientPhone": "0901234567",
+    "streetAddress": "123 Tech Street",
+    "ward": "Ward 1",
+    "district": "District 3",
+    "province": "Ho Chi Minh City",
+    "isDefault": true,
+    "createdAt": "2026-10-22T08:00:00.000Z"
+  }
+]</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Get Address by ID</h2>
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/addresses/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>ADDRESS_MANAGE</code> (ownership verified)</li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns a single <code>AddressResponse</code> object.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Add Shipping Address</h2>
+      <p>Adds a new delivery address to the customer's address book.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/addresses</code></li>
+        <li><strong>Security:</strong> Requires <code>ADDRESS_MANAGE</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "recipientName": "Nguyen Van A",
+  "recipientPhone": "0901234567",
+  "streetAddress": "123 Tech Street",
+  "ward": "Ward 1",
+  "district": "District 3",
+  "province": "Ho Chi Minh City",
+  "isDefault": true
+}</code></pre>
+
+      <h3>Success Response (201 Created)</h3>
+      <p>Returns created <code>AddressResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. Update Shipping Address</h2>
+      <ul>
+        <li><strong>Method:</strong> <code>PUT</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/addresses/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>ADDRESS_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>AddressResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>5. Set Default Address &amp; Delete Address</h2>
+      <ul>
+        <li><strong>Set as Default:</strong> <code>PATCH /api/v1/addresses/{id}/default</code> &rarr; <code>204 No Content</code></li>
+        <li><strong>Delete Address:</strong> <code>DELETE /api/v1/addresses/{id}</code> &rarr; <code>204 No Content</code></li>
+      </ul>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

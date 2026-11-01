@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - User Management API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Admin &mdash; User Management API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/admin/users</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.admin.controller.AdminUserController</code></p>
+    <p><strong>Security:</strong> All endpoints require <code>USER_MANAGE</code> authority</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. List Users</h2>
+      <p>Lists user accounts across all roles with keyword search, role ID, and account status filtering.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/users</code></li>
+        <li><strong>Security:</strong> Requires <code>USER_MANAGE</code></li>
+      </ul>
+
+      <h3>Query Parameters</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>search</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Case-insensitive search matching full name, email, or phone number</td>
+          </tr>
+          <tr>
+            <td><code>roleId</code></td>
+            <td>integer</td>
+            <td>No</td>
+            <td>Filter by system role ID (e.g. <code>1</code> for ADMIN, <code>2</code> for STAFF, <code>3</code> for CUSTOMER)</td>
+          </tr>
+          <tr>
+            <td><code>isActive</code></td>
+            <td>boolean</td>
+            <td>No</td>
+            <td>Filter by active status (<code>true</code> or <code>false</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>[
+  {
+    "id": "a50c82f8-0f0e-436b-a253-12502690d796",
+    "email": "admin@joppe.vn",
+    "fullName": "System Administrator",
+    "phoneNumber": "0987654321",
+    "avatarUrl": "/uploads/avatars/admin.webp",
+    "roleId": 1,
+    "roleName": "ROLE_ADMIN",
+    "isActive": true,
+    "createdAt": "2026-10-22T00:00:00.000Z"
+  }
+]</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Get User by ID</h2>
+      <p>Retrieves specific account profile and role details by user UUID.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/users/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>USER_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns a single <code>UserSummaryResponse</code> object matching the item schema above.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Create User Account</h2>
+      <p>Manually provisions a new account with an assigned system role.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/users</code></li>
+        <li><strong>Security:</strong> Requires <code>USER_MANAGE</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "email": "staff_nv1@joppe.vn",
+  "password": "StaffPassword123!",
+  "fullName": "Tran Thi Staff",
+  "phoneNumber": "0933112233",
+  "roleId": 2
+}</code></pre>
+
+      <h3>Field Validation Rules</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Constraints</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>email</code></td>
+            <td>string</td>
+            <td>Yes</td>
+            <td>Not blank, valid email format, unique</td>
+          </tr>
+          <tr>
+            <td><code>password</code></td>
+            <td>string</td>
+            <td>Yes</td>
+            <td>Not blank, min 6 characters</td>
+          </tr>
+          <tr>
+            <td><code>fullName</code></td>
+            <td>string</td>
+            <td>Yes</td>
+            <td>Not blank, max 150 characters</td>
+          </tr>
+          <tr>
+            <td><code>phoneNumber</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Max 20 characters</td>
+          </tr>
+          <tr>
+            <td><code>roleId</code></td>
+            <td>integer</td>
+            <td>Yes</td>
+            <td>Must reference a valid existing role ID</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Success Response (201 Created)</h3>
+      <p>Returns created <code>UserSummaryResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. Update User Account</h2>
+      <p>Modifies user details, role assignment, and active status.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>PUT</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/users/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>USER_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "fullName": "Tran Thi Staff Updated",
+  "phoneNumber": "0933998877",
+  "avatarUrl": "/uploads/avatars/staff.webp",
+  "roleId": 2,
+  "isActive": true
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>UserSummaryResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>5. Activate / Suspend User Account</h2>
+      <p>Quickly activates or suspends an account.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>PATCH</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/users/{id}/status</code></li>
+        <li><strong>Security:</strong> Requires <code>USER_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "isActive": false
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>{
+  "success": true,
+  "message": "User account suspended"
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>6. Delete User Account</h2>
+      <p>Permanently removes a user account from the system.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>DELETE</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/users/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>USER_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>{
+  "success": true,
+  "message": "User deleted successfully"
+}</code></pre>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

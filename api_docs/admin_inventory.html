@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Inventory &amp; Supply Chain API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Admin &mdash; Inventory &amp; Supply Chain API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/admin/inventory</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.admin.controller.AdminInventoryController</code></p>
+    <p><strong>Security:</strong> Requires <code>INVENTORY_READ</code> (viewing) or <code>INVENTORY_WRITE</code> (modifications)</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. Suppliers Management</h2>
+      <p>CRUD operations for hardware distributors, component manufacturers, and vendor contacts.</p>
+
+      <ul>
+        <li><strong>List Suppliers:</strong> <code>GET /api/v1/admin/inventory/suppliers</code> (Supports <code>isActive</code>, <code>search</code>) &rarr; <code>200 OK</code></li>
+        <li><strong>Get Supplier by ID:</strong> <code>GET /api/v1/admin/inventory/suppliers/{id}</code> &rarr; <code>200 OK</code></li>
+        <li><strong>Create Supplier:</strong> <code>POST /api/v1/admin/inventory/suppliers</code> (Security: <code>INVENTORY_WRITE</code>) &rarr; <code>201 Created</code></li>
+        <li><strong>Update Supplier:</strong> <code>PUT /api/v1/admin/inventory/suppliers/{id}</code> (Security: <code>INVENTORY_WRITE</code>) &rarr; <code>200 OK</code></li>
+        <li><strong>Toggle Active Status:</strong> <code>PATCH /api/v1/admin/inventory/suppliers/{id}/status?isActive=true</code> &rarr; <code>204 No Content</code></li>
+        <li><strong>Delete Supplier:</strong> <code>DELETE /api/v1/admin/inventory/suppliers/{id}</code> &rarr; <code>204 No Content</code></li>
+      </ul>
+
+      <h3>Create Supplier Request Body</h3>
+      <pre><code>{
+  "supplierName": "Viettel Distribution",
+  "contactPerson": "Nguyen Van Distro",
+  "phoneNumber": "0901234567",
+  "email": "distro@viettel.vn",
+  "address": "Hanoi, Vietnam",
+  "isActive": true
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Goods Receipts (Inbound Stock Import)</h2>
+      <p>Manages physical inventory batches received from suppliers.</p>
+
+      <ul>
+        <li><strong>List Receipts:</strong> <code>GET /api/v1/admin/inventory/receipts</code> (Supports <code>status</code>, <code>supplierId</code>, <code>search</code>) &rarr; <code>200 OK</code></li>
+        <li><strong>Get Receipt Detail:</strong> <code>GET /api/v1/admin/inventory/receipts/{id}</code> &rarr; <code>200 OK</code> (Includes line items and unit costs)</li>
+        <li><strong>Create Inbound Receipt Batch:</strong> <code>POST /api/v1/admin/inventory/receipts</code> (Security: <code>INVENTORY_WRITE</code>) &rarr; <code>201 Created</code></li>
+        <li><strong>Finalize Draft Receipt:</strong> <code>POST /api/v1/admin/inventory/receipts/{id}/complete</code> (Security: <code>INVENTORY_WRITE</code>) &rarr; <code>200 OK</code></li>
+      </ul>
+
+      <h3>Create Receipt Request Body</h3>
+      <pre><code>{
+  "supplierId": "11111111-aaaa-bbbb-cccc-111111111111",
+  "receiptCode": "REC-20261031-RTX4080",
+  "completeImmediately": true,
+  "items": [
+    {
+      "variantId": "22222222-3333-4444-5555-666666666666",
+      "quantity": 10,
+      "importPrice": 28000000.00
+    }
+  ]
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Warehouse Stock &amp; Low Stock Audits</h2>
+      <p>Real-time visibility over physical quantity on hand, reserved items, available units, and safety stock reorder thresholds.</p>
+
+      <ul>
+        <li><strong>List Stock Audits:</strong> <code>GET /api/v1/admin/inventory/stock</code> (Supports <code>lowStockOnly</code>, <code>search</code>, <code>categoryId</code>, <code>brandId</code>) &rarr; <code>200 OK</code></li>
+        <li><strong>Adjust Stock Manually:</strong> <code>PATCH /api/v1/admin/inventory/stock/{variantId}</code> (Security: <code>INVENTORY_WRITE</code>) &rarr; <code>200 OK</code></li>
+      </ul>
+
+      <h3>Success Response (200 OK) for <code>/stock</code></h3>
+      <pre><code>[
+  {
+    "variantId": "22222222-3333-4444-5555-666666666666",
+    "productId": "11111111-2222-3333-4444-555555555555",
+    "productName": "Intel Core i9-14900K",
+    "variantName": "Tray No Fan",
+    "sku": "CPU-INTEL-14900K-TRAY",
+    "thumbnailUrl": "/uploads/products/14900k.webp",
+    "salePrice": 14500000.00,
+    "listPrice": 15500000.00,
+    "quantityOnHand": 5,
+    "quantityReserved": 1,
+    "stockAvailable": 4,
+    "reorderLevel": 10,
+    "isLowStock": true,
+    "isOutOfStock": false
+  }
+]</code></pre>
+
+      <h3>Adjust Stock Request Body</h3>
+      <pre><code>{
+  "quantityOnHand": 25,
+  "reorderLevel": 5
+}</code></pre>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

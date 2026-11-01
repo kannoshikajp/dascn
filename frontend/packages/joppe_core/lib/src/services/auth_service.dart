@@ -7,10 +7,39 @@ class AuthService {
 
   AuthService(this._apiClient);
 
+  ApiClient get client => _apiClient;
+
   Future<AuthSession> login(String email, String password) async {
     final response = await _apiClient.post('/api/v1/auth/login', {
       'email': email,
       'password': password,
+    });
+    final session = AuthSession.fromJson(response as Map<String, dynamic>);
+    _apiClient.setToken(session.accessToken);
+    return session;
+  }
+
+  Future<AuthSession> register({
+    required String fullName,
+    required String email,
+    required String password,
+    String? phoneNumber,
+  }) async {
+    final body = <String, dynamic>{
+      'fullName': fullName,
+      'email': email,
+      'password': password,
+      if (phoneNumber != null && phoneNumber.isNotEmpty) 'phoneNumber': phoneNumber,
+    };
+    final response = await _apiClient.post('/api/v1/auth/register', body);
+    final session = AuthSession.fromJson(response as Map<String, dynamic>);
+    _apiClient.setToken(session.accessToken);
+    return session;
+  }
+
+  Future<AuthSession> loginWithGoogle(String idToken) async {
+    final response = await _apiClient.post('/api/v1/auth/google', {
+      'idToken': idToken,
     });
     final session = AuthSession.fromJson(response as Map<String, dynamic>);
     _apiClient.setToken(session.accessToken);

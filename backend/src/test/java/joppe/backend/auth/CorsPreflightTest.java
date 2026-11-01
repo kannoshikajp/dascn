@@ -47,4 +47,15 @@ class CorsPreflightTest {
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:8888"))
                 .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
     }
+
+    @Test
+    void preflightOptionsRequestFromDomainAllowed() throws Exception {
+        mockMvc.perform(options("/api/v1/auth/login")
+                        .header("Origin", "https://joppe.penguinlab.org")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "Content-Type,Authorization"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://joppe.penguinlab.org"))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+    }
 }

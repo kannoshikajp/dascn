@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Category Management API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Category Management API</h1>
+    <p><strong>Public Path:</strong> <code>/api/v1/categories</code> &bull; <strong>Admin Path:</strong> <code>/api/v1/admin/categories</code></p>
+    <p><strong>Controllers:</strong> <code>CategoryController</code> (Public) &amp; <code>AdminCategoryController</code> (Admin)</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. Public: Get Active Category Tree</h2>
+      <p>Returns active categories structured as a nested parent-child tree.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/categories/tree</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>[
+  {
+    "id": 1,
+    "parentId": null,
+    "categoryName": "PC Components",
+    "slug": "pc-components",
+    "iconUrl": "https://cdn.joppe.vn/icons/cpu.svg",
+    "isActive": true,
+    "productCount": 42,
+    "children": [
+      {
+        "id": 2,
+        "parentId": 1,
+        "categoryName": "Graphics Cards (GPU)",
+        "slug": "gpu",
+        "iconUrl": "https://cdn.joppe.vn/icons/gpu.svg",
+        "isActive": true,
+        "productCount": 18,
+        "children": []
+      }
+    ]
+  }
+]</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Public: Get Category by ID or Slug</h2>
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Paths:</strong> <code>/api/v1/categories/{id}</code> or <code>/api/v1/categories/slug/{slug}</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns single <code>CategoryResponse</code> object.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Admin: List Flat Categories</h2>
+      <p>Returns flat category list with product count, child count, search query, and status filters.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/categories</code></li>
+        <li><strong>Security:</strong> Requires <code>CATALOG_WRITE</code> authority</li>
+      </ul>
+
+      <h3>Query Parameters</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>search</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Search keyword matching category name or slug</td>
+          </tr>
+          <tr>
+            <td><code>isActive</code></td>
+            <td>boolean</td>
+            <td>No</td>
+            <td>Filter by active status (<code>true</code> or <code>false</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>[
+  {
+    "id": 1,
+    "parentId": null,
+    "parentName": null,
+    "categoryName": "PC Components",
+    "slug": "pc-components",
+    "iconUrl": "https://cdn.joppe.vn/icons/cpu.svg",
+    "isActive": true,
+    "createdAt": "2026-10-22T00:00:00.000Z",
+    "productCount": 42,
+    "childCount": 6
+  }
+]</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. Admin: Create Category</h2>
+      <p>Creates a new catalog category. Generates URL slug automatically if omitted.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/categories</code></li>
+        <li><strong>Security:</strong> Requires <code>CATALOG_WRITE</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "parentId": 1,
+  "categoryName": "Solid State Drives (SSD)",
+  "slug": "solid-state-drives-ssd",
+  "iconUrl": "/uploads/categories/ssd.svg",
+  "isActive": true
+}</code></pre>
+
+      <h3>Success Response (201 Created)</h3>
+      <p>Returns created <code>CategoryResponse</code> object.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>5. Admin: Update Category</h2>
+      <p>Updates category name, parent node, slug, or icon URL.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>PUT</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/categories/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>CATALOG_WRITE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (integer)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>CategoryResponse</code> object.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>6. Admin: Toggle Status &amp; Delete Category</h2>
+      <ul>
+        <li><strong>Toggle Active Status:</strong> <code>PATCH /api/v1/admin/categories/{id}/status?isActive=true</code> &rarr; <code>204 No Content</code></li>
+        <li><strong>Delete Category:</strong> <code>DELETE /api/v1/admin/categories/{id}</code> &rarr; <code>204 No Content</code></li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>7. Admin: Export Categories CSV</h2>
+      <p>Generates and downloads a CSV export file with UTF-8 BOM encoding containing filtered or all categories.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/categories/export</code></li>
+        <li><strong>Security:</strong> Bearer JWT (<code>CATALOG_READ</code> or <code>CATALOG_WRITE</code>)</li>
+        <li><strong>Produces:</strong> <code>text/csv; charset=UTF-8</code></li>
+      </ul>
+
+      <h3>Query Parameters</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>search</code></td>
+            <td>String</td>
+            <td>No</td>
+            <td>Search by category name or slug</td>
+          </tr>
+          <tr>
+            <td><code>isActive</code></td>
+            <td>Boolean</td>
+            <td>No</td>
+            <td>Filter by active/inactive status</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>System Health &amp; Liveness Probes API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>System Health &amp; Liveness Probes API</h1>
+    <p><strong>Base Paths:</strong> <code>/live</code> or <code>/api/v1/live</code></p>
+    <p><strong>Security:</strong> Public (No authorization required)</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. Check Service Liveness &amp; Health</h2>
+      <p>Checks real-time application uptime, database connectivity, and backend dependencies health status.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/live</code> or <code>/api/v1/live</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+        <li><strong>Headers:</strong> <code>Accept: application/json</code></li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returned when both the application service and PostgreSQL database are healthy and responding:</p>
+      <pre><code>{
+  "status": "UP",
+  "message": "Joppe backend is live and healthy.",
+  "timestamp": "2026-10-26T12:00:00Z",
+  "version": "1.0.0",
+  "details": {
+    "database": "CONNECTED",
+    "service": "UP"
+  }
+}</code></pre>
+
+      <h3>Degraded Response (503 Service Unavailable)</h3>
+      <p>Returned when the PostgreSQL database or a critical dependency is unreachable:</p>
+      <pre><code>{
+  "status": "DOWN",
+  "message": "Cannot access backend service dependencies: database is unreachable or degraded.",
+  "timestamp": "2026-10-26T12:00:00Z",
+  "version": "1.0.0",
+  "details": {
+    "database": "DISCONNECTED",
+    "error": "Connection to database failed: ...",
+    "service": "DEGRADED"
+  }
+}</code></pre>
+
+      <h3>Method Not Allowed Response (405 Method Not Allowed)</h3>
+      <p>Returned when invoking <code>/live</code> with an unsupported HTTP method (e.g. POST, PUT, DELETE):</p>
+      <pre><code>{
+  "status": "ERROR",
+  "message": "Cannot access /live with this HTTP method. Only GET is permitted.",
+  "timestamp": "2026-10-26T12:00:00Z",
+  "version": "1.0.0",
+  "details": {
+    "allowedMethods": "GET",
+    "error": "Method not allowed for /live probe"
+  }
+}</code></pre>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

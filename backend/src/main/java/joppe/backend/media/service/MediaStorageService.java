@@ -6,13 +6,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import joppe.backend.media.domain.UploadedMedia;
+import joppe.backend.media.domain.UploadedMediaRepository;
 import joppe.backend.media.dto.UploadResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,9 +54,13 @@ public class MediaStorageService {
     );
 
     private final Path rootUploadPath;
+    private final UploadedMediaRepository uploadedMediaRepository;
 
-    public MediaStorageService(@Value("${app.upload.dir:uploads}") String uploadDir) {
+    public MediaStorageService(
+            @Value("${app.upload.dir:uploads}") String uploadDir,
+            UploadedMediaRepository uploadedMediaRepository) {
         this.rootUploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.uploadedMediaRepository = uploadedMediaRepository;
         try {
             Files.createDirectories(this.rootUploadPath);
         } catch (IOException e) {
@@ -61,6 +69,7 @@ public class MediaStorageService {
         }
     }
 
+    @Transactional
     public UploadResponse store(MultipartFile file, String folder) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Cannot upload empty file");
@@ -115,15 +124,59 @@ public class MediaStorageService {
             String relativeUrl = "/uploads/" + targetFolder + "/" + uniqueFilename;
             log.info("Stored uploaded image: {} as {} ({} bytes)", originalFilename, relativeUrl, file.getSize());
 
+            UploadedMedia media = UploadedMedia.builder()
+                    .fileUrl(relativeUrl)
+                    .fileName(originalFilename)
+                    .fileSize(file.getSize())
+                    .contentType(contentType)
+                    .folder(targetFolder)
+                    .build();
+
+            UploadedMedia saved = uploadedMediaRepository.save(media);
+
             return new UploadResponse(
-                    relativeUrl,
-                    originalFilename,
-                    file.getSize(),
-                    contentType
+                    saved.getId(),
+                    saved.getFileUrl(),
+                    saved.getFileName(),
+                    saved.getFileSize(),
+                    saved.getContentType(),
+                    saved.getFolder(),
+                    saved.getCreatedAt()
             );
         } catch (IOException e) {
             log.error("Failed to store uploaded media file", e);
             throw new RuntimeException("Failed to store file: " + e.getMessage(), e);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<UploadResponse> listMedia(String folder, String search) {
+        String cleanFolder = (folder != null && !folder.isBlank()) ? folder.trim().toLowerCase(java.util.Locale.ROOT) : null;
+        String cleanSearch = (search != null && !search.isBlank()) ? search.trim().toLowerCase(java.util.Locale.ROOT) : null;
+
+        List<UploadedMedia> mediaList;
+        if (cleanFolder != null && !cleanFolder.equals("all")) {
+            mediaList = uploadedMediaRepository.findByFolderOrderByCreatedAtDesc(cleanFolder);
+        } else {
+            mediaList = uploadedMediaRepository.findAllByOrderByCreatedAtDesc();
+        }
+
+        if (cleanSearch != null) {
+            mediaList = mediaList.stream()
+                    .filter(m -> m.getFileName() != null && m.getFileName().toLowerCase(java.util.Locale.ROOT).contains(cleanSearch))
+                    .toList();
+        }
+
+        return mediaList.stream()
+                .map(m -> new UploadResponse(
+                        m.getId(),
+                        m.getFileUrl(),
+                        m.getFileName(),
+                        m.getFileSize(),
+                        m.getContentType(),
+                        m.getFolder(),
+                        m.getCreatedAt()
+                ))
+                .toList();
     }
 }

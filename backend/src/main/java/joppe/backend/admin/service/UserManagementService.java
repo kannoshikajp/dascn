@@ -80,6 +80,9 @@ public class UserManagementService {
         }
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found with id: " + roleId));
+        if ("ROLE_NON_LOGIN".equalsIgnoreCase(role.getRoleName())) {
+            throw new IllegalArgumentException("Cannot assign guest role ROLE_NON_LOGIN to a user account");
+        }
 
         User user = User.builder()
                 .email(email)
@@ -112,11 +115,19 @@ public class UserManagementService {
 
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found with id: " + roleId));
+        if ("ROLE_NON_LOGIN".equalsIgnoreCase(role.getRoleName())) {
+            throw new IllegalArgumentException("Cannot assign guest role ROLE_NON_LOGIN to a user account");
+        }
 
         if (phoneNumber != null && !phoneNumber.isBlank() && !phoneNumber.equals(user.getPhoneNumber())) {
             if (userRepository.existsByPhoneNumber(phoneNumber)) {
                 throw new IllegalArgumentException("Phone number already in use: " + phoneNumber);
             }
+        }
+
+        boolean willBeActiveAdmin = Boolean.TRUE.equals(isActive) && "ROLE_ADMIN".equalsIgnoreCase(role.getRoleName());
+        if (!willBeActiveAdmin && isUserActiveAdmin(user)) {
+            ensureNotLastActiveAdmin();
         }
 
         user.setFullName(fullName);
@@ -142,17 +153,42 @@ public class UserManagementService {
 
     @Transactional
     public void updateUserStatus(UUID userId, boolean isActive) {
-        if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("User not found: " + userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        if (!isActive && isUserActiveAdmin(user)) {
+            ensureNotLastActiveAdmin();
         }
         userRepository.updateActiveStatus(userId, isActive);
     }
 
     @Transactional
     public void deleteUser(UUID userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("User not found: " + userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        if (isUserActiveAdmin(user)) {
+            ensureNotLastActiveAdmin();
         }
         userRepository.deleteById(userId);
+    }
+
+    private boolean isUserActiveAdmin(User user) {
+        if (user.getIsActive() == null || !user.getIsActive()) {
+            return false;
+        }
+        return roleRepository.findRoleNameById(user.getRoleId())
+                .map("ROLE_ADMIN"::equalsIgnoreCase)
+                .orElse(false);
+    }
+
+    private void ensureNotLastActiveAdmin() {
+        Role adminRole = roleRepository.findByRoleName("ROLE_ADMIN").orElse(null);
+        if (adminRole != null) {
+            long activeAdmins = userRepository.countByRoleIdAndIsActiveTrue(adminRole.getId());
+            if (activeAdmins <= 1) {
+                throw new IllegalStateException("At least one active administrator account is required.");
+            }
+        }
     }
 }

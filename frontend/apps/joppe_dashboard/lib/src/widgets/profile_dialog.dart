@@ -201,32 +201,12 @@ class _ProfileDialogState extends State<ProfileDialog> with SingleTickerProvider
                               ),
                         ),
                         const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Text(
-                              widget.profile.email,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(width: JoppeSpacing.sm),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                widget.profile.role,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onPrimaryContainer,
-                                ),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          widget.profile.email,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -320,53 +300,6 @@ class _ProfileDialogState extends State<ProfileDialog> with SingleTickerProvider
                               filled: true,
                               fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                               helperText: 'Email address cannot be changed directly.',
-                            ),
-                          ),
-                          const SizedBox(height: JoppeSpacing.md),
-
-                          // Role and Permissions summary
-                          Card(
-                            elevation: 0,
-                            color: colorScheme.surfaceContainerLowest,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: BorderSide(color: colorScheme.outlineVariant),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(JoppeSpacing.sm),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Role & Granted Permissions',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Wrap(
-                                    spacing: 6,
-                                    runSpacing: 4,
-                                    children: [
-                                      Chip(
-                                        label: Text(widget.profile.role),
-                                        padding: EdgeInsets.zero,
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                      Chip(
-                                        avatar: const Icon(Icons.key, size: 14),
-                                        label: Text(
-                                          '${widget.profile.permissions.length} permissions active',
-                                        ),
-                                        padding: EdgeInsets.zero,
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
                           const SizedBox(height: JoppeSpacing.lg),

@@ -40,13 +40,23 @@ public class Order {
     @Column(name = "promotion_id")
     private UUID promotionId;
 
+    @Column(name = "order_channel", nullable = false, length = 30)
+    @Builder.Default
+    private String orderChannel = "ONLINE";
+
     @Column(name = "order_status", nullable = false, length = 50)
     @Builder.Default
-    private String orderStatus = "PENDING";
+    private String orderStatus = "ACCEPTED";
 
     @Column(name = "payment_status", nullable = false, length = 50)
     @Builder.Default
-    private String paymentStatus = "UNPAID";
+    private String paymentStatus = "PAID";
+
+    @Column(name = "paid_at")
+    private OffsetDateTime paidAt;
+
+    @Column(name = "delivered_at")
+    private OffsetDateTime deliveredAt;
 
     @Column(name = "recipient_name", nullable = false, length = 150)
     private String recipientName;
@@ -91,11 +101,20 @@ public class Order {
         if (updatedAt == null) {
             updatedAt = now;
         }
+        if (orderChannel == null) {
+            orderChannel = "ONLINE";
+        }
         if (orderStatus == null) {
-            orderStatus = "PENDING";
+            orderStatus = "ACCEPTED";
         }
         if (paymentStatus == null) {
-            paymentStatus = "UNPAID";
+            paymentStatus = "PAID";
+        }
+        if ("PAID".equalsIgnoreCase(paymentStatus) && paidAt == null) {
+            paidAt = now;
+        }
+        if (("SHIPPED".equalsIgnoreCase(orderStatus) || "SHOWROOM_BUY".equalsIgnoreCase(orderStatus)) && deliveredAt == null) {
+            deliveredAt = now;
         }
         if (subtotalAmount == null) {
             subtotalAmount = BigDecimal.ZERO;

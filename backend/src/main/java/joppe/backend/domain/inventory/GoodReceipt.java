@@ -33,8 +33,15 @@ public class GoodReceipt {
     @Column(name = "receipt_code", nullable = false, unique = true, length = 50)
     private String receiptCode;
 
-    @Column(name = "supplier_id", nullable = false)
+    @Column(name = "receipt_type", nullable = false, length = 20)
+    @Builder.Default
+    private String receiptType = "INBOUND";
+
+    @Column(name = "supplier_id")
     private UUID supplierId;
+
+    @Column(name = "order_id")
+    private UUID orderId;
 
     @Column(name = "staff_id", nullable = false)
     private UUID staffId;
@@ -47,6 +54,9 @@ public class GoodReceipt {
     @Builder.Default
     private String status = "DRAFT";
 
+    @Column(name = "note", length = 255)
+    private String note;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -54,6 +64,9 @@ public class GoodReceipt {
     public void onPrePersist() {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now();
+        }
+        if (receiptType == null) {
+            receiptType = "INBOUND";
         }
         if (status == null) {
             status = "DRAFT";

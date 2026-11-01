@@ -10,6 +10,7 @@ import joppe.backend.admin.dto.CreateCategoryRequest;
 import joppe.backend.admin.dto.UpdateCategoryRequest;
 import joppe.backend.admin.service.CategoryManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/admin/categories")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('CATALOG_WRITE')")
+@PreAuthorize("hasAnyAuthority('CATALOG_READ', 'CATALOG_WRITE')")
 @Tag(name = "Admin - Categories", description = "Administrative endpoints for nested category hierarchy management")
 public class AdminCategoryController {
 
@@ -52,6 +53,19 @@ public class AdminCategoryController {
         return ResponseEntity.ok(tree);
     }
 
+    @GetMapping(value = "/export", produces = "text/csv; charset=UTF-8")
+    @Operation(summary = "Export categories to CSV file")
+    public ResponseEntity<byte[]> exportCategories(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean isActive
+    ) {
+        byte[] csv = categoryService.exportCategoriesCsv(search, isActive);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"categories.csv\"")
+                .header(HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
+                .body(csv);
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get category by ID")
     public ResponseEntity<CategoryResponse> getCategory(@PathVariable Integer id) {
@@ -60,6 +74,7 @@ public class AdminCategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('CATALOG_WRITE')")
     @Operation(summary = "Create a new category")
     public ResponseEntity<CategoryResponse> createCategory(@Valid @RequestBody CreateCategoryRequest request) {
         CategoryResponse category = categoryService.createCategory(request);
@@ -67,6 +82,7 @@ public class AdminCategoryController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('CATALOG_WRITE')")
     @Operation(summary = "Update an existing category")
     public ResponseEntity<CategoryResponse> updateCategory(
             @PathVariable Integer id,
@@ -77,6 +93,7 @@ public class AdminCategoryController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('CATALOG_WRITE')")
     @Operation(summary = "Toggle category active status")
     public ResponseEntity<Void> updateStatus(
             @PathVariable Integer id,
@@ -87,6 +104,7 @@ public class AdminCategoryController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('CATALOG_WRITE')")
     @Operation(summary = "Delete category by ID (cascade check)")
     public ResponseEntity<Void> deleteCategory(@PathVariable Integer id) {
         categoryService.deleteCategory(id);

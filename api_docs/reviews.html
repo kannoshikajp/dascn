@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Product Reviews &amp; Ratings API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Product Reviews &amp; Ratings API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/reviews</code> &bull; <code>/api/v1/products/{productId}/reviews</code></p>
+    <p><strong>Target Service:</strong> <code>joppe.backend.domain.interaction.ReviewService</code></p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>Endpoints Specification</h2>
+      <ul>
+        <li>
+          <strong>Get Product Reviews:</strong>
+          <code>GET /api/v1/products/{productId}/reviews</code> &bull; Security: Public (<code>REVIEW_READ</code> / <code>permitAll</code>)
+          <p>Returns verified customer ratings, review comments, and aggregate star distribution.</p>
+        </li>
+        <li>
+          <strong>Submit Customer Review:</strong>
+          <code>POST /api/v1/products/{productId}/reviews</code> &bull; Security: Authenticated (<code>REVIEW_CREATE</code>)
+          <p>Allows verified purchasers to submit a star rating (1-5) and text feedback.</p>
+        </li>
+        <li>
+          <strong>Moderate Review Visibility:</strong>
+          <code>PATCH /api/v1/admin/reviews/{id}/visibility</code> &bull; Security: Staff / Admin (<code>REVIEW_MANAGE</code>)
+          <p>Toggles visibility status of customer reviews.</p>
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

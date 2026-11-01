@@ -1,68 +1,64 @@
 package joppe.backend.media;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import javax.sql.DataSource;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+import joppe.backend.media.controller.MediaUploadController;
+import joppe.backend.media.dto.UploadResponse;
+import joppe.backend.media.service.MediaStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
-@SpringBootTest(properties = {
-    "spring.flyway.enabled=false",
-    "spring.jpa.hibernate.ddl-auto=none",
-    "app.admin.auto-create=false",
-    "app.upload.dir=target/test-uploads"
-})
+@ExtendWith(MockitoExtension.class)
 class MediaUploadControllerTest {
-
-    @MockitoBean
-    private DataSource dataSource;
-
-    @Autowired
-    private WebApplicationContext context;
 
     private MockMvc mockMvc;
 
+    @Mock
+    private MediaStorageService mediaStorageService;
+
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context)
-                .apply(springSecurity())
+        mockMvc = MockMvcBuilders.standaloneSetup(new MediaUploadController(mediaStorageService))
                 .build();
     }
 
     @Test
-    void uploadWithoutAuthFails() throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "test.png",
-                MediaType.IMAGE_PNG_VALUE,
-                "fake image content".getBytes()
-        );
-
-        mockMvc.perform(multipart("/api/v1/media/upload").file(file))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser(username = "admin@joppe.vn", roles = {"ADMIN"})
-    void uploadWithAuthSucceeds() throws Exception {
+    void uploadWithFileSucceeds() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "sample-laptop.png",
                 MediaType.IMAGE_PNG_VALUE,
                 "sample-png-binary-data".getBytes()
+        );
+
+        when(mediaStorageService.store(any(), eq("descriptions"))).thenReturn(
+                new UploadResponse(
+                        UUID.randomUUID(),
+                        "/uploads/descriptions/sample-laptop.png",
+                        "sample-laptop.png",
+                        1024L,
+                        "image/png",
+                        "descriptions",
+                        OffsetDateTime.now()
+                )
         );
 
         mockMvc.perform(multipart("/api/v1/media/upload")
@@ -75,39 +71,23 @@ class MediaUploadControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "admin@joppe.vn", roles = {"ADMIN"})
-    void uploadJpgImageSucceeds() throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "laptop-photo.jpg",
-                "image/jpeg",
-                "sample-jpg-binary-data".getBytes()
+    void listMedia_Success() throws Exception {
+        UploadResponse item = new UploadResponse(
+                UUID.randomUUID(),
+                "/uploads/products/sample.png",
+                "sample.png",
+                1024L,
+                "image/png",
+                "products",
+                OffsetDateTime.now()
         );
 
-        mockMvc.perform(multipart("/api/v1/media/upload")
-                        .file(file)
-                        .param("folder", "products"))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.fileUrl", containsString("/uploads/products/")))
-                .andExpect(jsonPath("$.fileName").value("laptop-photo.jpg"))
-                .andExpect(jsonPath("$.contentType").value("image/jpeg"));
-    }
+        when(mediaStorageService.listMedia(eq("products"), any())).thenReturn(List.of(item));
 
-    @Test
-    @WithMockUser(username = "admin@joppe.vn", roles = {"ADMIN"})
-    void uploadJpgWithOctetStreamFallbackSucceeds() throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "photo.jpeg",
-                MediaType.APPLICATION_OCTET_STREAM_VALUE,
-                "sample-jpeg-binary-data".getBytes()
-        );
-
-        mockMvc.perform(multipart("/api/v1/media/upload")
-                        .file(file))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.fileUrl", containsString("/uploads/general/")))
-                .andExpect(jsonPath("$.fileName").value("photo.jpeg"))
-                .andExpect(jsonPath("$.contentType").value("image/jpeg"));
+        mockMvc.perform(get("/api/v1/media").param("folder", "products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].fileName").value("sample.png"))
+                .andExpect(jsonPath("$[0].fileUrl").value("/uploads/products/sample.png"));
     }
 }

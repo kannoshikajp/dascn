@@ -3,6 +3,8 @@ package joppe.backend.admin.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
 
 public record CreateVariantRequest(
         @NotBlank(message = "SKU is required")
@@ -12,6 +14,12 @@ public record CreateVariantRequest(
         @NotBlank(message = "Variant name is required")
         @Size(max = 255)
         String variantName,
+
+        String thumbnailUrl,
+
+        String description,
+
+        List<UUID> mediaIds,
 
         String attributes,
 

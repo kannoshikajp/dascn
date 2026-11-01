@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Joppe Tech Store — API Documentation Index</title>
+</head>
+<body>
+
+  <header>
+    <h1>Joppe Tech Store &mdash; API Documentation Index</h1>
+    <p>Comprehensive API documentation and specification for Joppe Tech Store backend services.</p>
+  </header>
+
+  <hr>
+
+  <section>
+    <h2>System Information &amp; Environments</h2>
+    <ul>
+      <li><strong>Version:</strong> <code>1.0.0</code></li>
+      <li><strong>Framework:</strong> Spring Boot 4.1.1 (Java 21 LTS)</li>
+      <li><strong>Base URLs:</strong>
+        <ul>
+          <li><strong>Production / Public:</strong> <code>https://joppe.penguinlab.org</code> (API prefix: <code>/api/v1</code>)</li>
+          <li><strong>Local Development:</strong> <code>http://127.0.0.1:8080</code> or <code>http://localhost:8080</code> (API prefix: <code>/api/v1</code>)</li>
+        </ul>
+      </li>
+      <li><strong>Default Headers:</strong>
+        <ul>
+          <li><code>Content-Type: application/json</code></li>
+          <li><code>Accept: application/json</code></li>
+        </ul>
+      </li>
+      <li><strong>OpenAPI / Swagger Documentation:</strong>
+        <ul>
+          <li>Public UI: <a href="https://joppe.penguinlab.org/swagger-ui.html">https://joppe.penguinlab.org/swagger-ui.html</a></li>
+          <li>Public OpenAPI JSON: <a href="https://joppe.penguinlab.org/v3/api-docs">https://joppe.penguinlab.org/v3/api-docs</a></li>
+          <li>Local UI: <a href="http://127.0.0.1:8080/swagger-ui.html">http://127.0.0.1:8080/swagger-ui.html</a></li>
+          <li>Local OpenAPI JSON: <a href="http://127.0.0.1:8080/v3/api-docs">http://127.0.0.1:8080/v3/api-docs</a></li>
+        </ul>
+      </li>
+      <li><strong>CORS Allowed Origins:</strong>
+        <ul>
+          <li><code>http://localhost:3000</code>, <code>http://localhost:8888</code>, <code>http://127.0.0.1:3000</code>, <code>http://127.0.0.1:8888</code></li>
+          <li><code>https://joppe-dash.vercel.app</code>, <code>https://joppe-dashboard.vercel.app</code>, <code>https://joppe.penguinlab.org</code></li>
+          <li>Wildcard patterns: <code>https://*.vercel.app</code>, <code>https://*.penguinlab.org</code></li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>Documentation Modules</h2>
+    <p>Select any module below to inspect full endpoint specifications, request payloads, and response examples:</p>
+    <table border="1" cellpadding="6" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Module</th>
+          <th>Base Route</th>
+          <th>File Link</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Health &amp; Liveness</strong></td>
+          <td><code>/live</code>, <code>/api/v1/live</code></td>
+          <td><a href="health.html">health.html</a></td>
+          <td>Uptime, health probes, database connection status</td>
+        </tr>
+        <tr>
+          <td><strong>Authentication &amp; Profile</strong></td>
+          <td><code>/api/v1/auth</code></td>
+          <td><a href="auth.html">auth.html</a></td>
+          <td>Customer registration, login, profile edit, password changes</td>
+        </tr>
+        <tr>
+          <td><strong>Admin &mdash; Users</strong></td>
+          <td><code>/api/v1/admin/users</code></td>
+          <td><a href="admin_users.html">admin_users.html</a></td>
+          <td>Account listings, CRUD, role assignment, status toggles</td>
+        </tr>
+        <tr>
+          <td><strong>Admin &mdash; RBAC Roles</strong></td>
+          <td><code>/api/v1/admin/roles</code></td>
+          <td><a href="admin_rbac.html">admin_rbac.html</a></td>
+          <td>Role definitions, permission lists, role-permission assignments</td>
+        </tr>
+        <tr>
+          <td><strong>Categories</strong></td>
+          <td><code>/api/v1/categories</code></td>
+          <td><a href="categories.html">categories.html</a></td>
+          <td>Hierarchical category tree, admin flat list, category CRUD</td>
+        </tr>
+        <tr>
+          <td><strong>Products &amp; Variants</strong></td>
+          <td><code>/api/v1/products</code></td>
+          <td><a href="products.html">products.html</a></td>
+          <td>Product catalog, SKU &amp; parentSku variant grouping, inventory specs</td>
+        </tr>
+        <tr>
+          <td><strong>Media &amp; Uploads</strong></td>
+          <td><code>/api/v1/media</code></td>
+          <td><a href="media.html">media.html</a></td>
+          <td>Multipart file upload, central media repository, asset reuse</td>
+        </tr>
+        <tr>
+          <td><strong>Customer Addresses</strong></td>
+          <td><code>/api/v1/addresses</code></td>
+          <td><a href="addresses.html">addresses.html</a></td>
+          <td>Delivery address book, default shipping location</td>
+        </tr>
+        <tr>
+          <td><strong>Shopping Cart</strong></td>
+          <td><code>/api/v1/cart</code></td>
+          <td><a href="cart.html">cart.html</a></td>
+          <td>Add/update/remove items, atomic stock validation, guest merge</td>
+        </tr>
+        <tr>
+          <td><strong>Customer Orders</strong></td>
+          <td><code>/api/v1/orders</code></td>
+          <td><a href="orders.html">orders.html</a></td>
+          <td>Checkout, order tracking, cancellations, forward state flow</td>
+        </tr>
+        <tr>
+          <td><strong>Admin &mdash; Orders &amp; POS</strong></td>
+          <td><code>/api/v1/admin/orders</code></td>
+          <td><a href="admin_orders.html">admin_orders.html</a></td>
+          <td>Order processing, status updates, walk-in counter POS, 10-day refund limit</td>
+        </tr>
+        <tr>
+          <td><strong>Admin &mdash; Inventory</strong></td>
+          <td><code>/api/v1/admin/inventory</code></td>
+          <td><a href="admin_inventory.html">admin_inventory.html</a></td>
+          <td>Hardware suppliers, inbound receipts, stock audits, adjustments</td>
+        </tr>
+        <tr>
+          <td><strong>Payment &mdash; VNPAY</strong></td>
+          <td><code>/api/v1/payment/vnpay</code></td>
+          <td><a href="payment_vnpay.html">payment_vnpay.html</a></td>
+          <td>Payment URL generation, IPN webhook, browser return handler</td>
+        </tr>
+        <tr>
+          <td><strong>Admin &mdash; Analytics</strong></td>
+          <td><code>/api/v1/admin/analytics</code></td>
+          <td><a href="admin_analytics.html">admin_analytics.html</a></td>
+          <td>Store overview metrics, revenue summary, 7-day sales velocity</td>
+        </tr>
+        <tr>
+          <td><strong>PC Builder (Spec)</strong></td>
+          <td><code>/api/v1/pc-builder</code></td>
+          <td><a href="pc_builder.html">pc_builder.html</a></td>
+          <td>Component compatibility evaluator, custom PC builds</td>
+        </tr>
+        <tr>
+          <td><strong>Reviews &amp; Ratings (Spec)</strong></td>
+          <td><code>/api/v1/reviews</code></td>
+          <td><a href="reviews.html">reviews.html</a></td>
+          <td>Customer star ratings, review feedback, moderation</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>Authentication &amp; Security Architecture</h2>
+    <h3>Stateless JWT Specification</h3>
+    <ul>
+      <li><strong>Library:</strong> Nimbus JOSE with <code>HmacSHA256</code> (256-bit symmetric key).</li>
+      <li><strong>Header format:</strong> <code>Authorization: Bearer &lt;accessToken&gt;</code></li>
+      <li><strong>JWT Payload Claims:</strong>
+        <pre><code>{
+  "sub": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "role": "ROLE_ADMIN",
+  "permissions": [
+    "AUTH_ME",
+    "AUTH_CHANGE_PASSWORD",
+    "USER_MANAGE",
+    "ROLE_MANAGE",
+    "CATALOG_READ",
+    "CATALOG_WRITE"
+  ],
+  "iss": "joppe-backend",
+  "iat": 1729584000,
+  "exp": 1729670400
+}</code></pre>
+      </li>
+    </ul>
+
+    <h3>System Roles &amp; Default Accounts</h3>
+    <table border="1" cellpadding="6" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Role Identifier</th>
+          <th>Description</th>
+          <th>Default Account</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ROLE_ADMIN</code></td>
+          <td>Superadministrator with full administrative and business rights</td>
+          <td><code>admin@joppe.vn</code> / <code>Admin@123456</code></td>
+        </tr>
+        <tr>
+          <td><code>ROLE_STAFF</code></td>
+          <td>Operational store staff for order fulfillment and stock</td>
+          <td>Configurable via Admin Users API</td>
+        </tr>
+        <tr>
+          <td><code>ROLE_CUSTOMER</code></td>
+          <td>Registered retail customer</td>
+          <td>Auto-assigned on registration</td>
+        </tr>
+        <tr>
+          <td><code>ROLE_NON_LOGIN</code></td>
+          <td>Anonymous guest visitor</td>
+          <td>Implicit public scope</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>Common Response Formats</h2>
+
+    <h3>1. Standard Operation Result (<code>ApiResponse</code>)</h3>
+    <pre><code>{
+  "success": true,
+  "message": "Operation completed successfully"
+}</code></pre>
+
+    <h3>2. Global Error Response (<code>ErrorDetails</code>)</h3>
+    <p>Returned for HTTP 400, 401, 403, 404, 500:</p>
+    <pre><code>{
+  "status": 403,
+  "error": "Forbidden",
+  "message": "Access denied: insufficient permissions",
+  "timestamp": "2026-10-31T08:30:00.000Z"
+}</code></pre>
+
+    <h3>3. Field Validation Error Response</h3>
+    <p>Returned on HTTP 400 when standard Bean Validation (<code>@Valid</code>) constraints fail:</p>
+    <pre><code>{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "fieldErrors": {
+    "email": "Email must be a valid email address",
+    "password": "Password must be at least 6 characters"
+  },
+  "timestamp": "2026-10-31T08:30:00.000Z"
+}</code></pre>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>HTTP Status Code Conventions</h2>
+    <table border="1" cellpadding="6" cellspacing="0">
+      <thead>
+        <tr>
+          <th>Status Code</th>
+          <th>Meaning</th>
+          <th>Usage Scenario</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>200 OK</code></td>
+          <td>Success</td>
+          <td>Standard successful GET, PUT, or PATCH operation returning payload body</td>
+        </tr>
+        <tr>
+          <td><code>201 Created</code></td>
+          <td>Resource Created</td>
+          <td>Successful POST registration, user creation, product, variant, order placement, or receipt</td>
+        </tr>
+        <tr>
+          <td><code>204 No Content</code></td>
+          <td>Action Succeeded</td>
+          <td>Successful DELETE or PATCH status toggles with no return body</td>
+        </tr>
+        <tr>
+          <td><code>400 Bad Request</code></td>
+          <td>Client Error</td>
+          <td>Malformed JSON, schema validation failure, business validation failure</td>
+        </tr>
+        <tr>
+          <td><code>401 Unauthorized</code></td>
+          <td>Missing / Invalid Auth</td>
+          <td>Missing Bearer token, expired JWT, or invalid credentials</td>
+        </tr>
+        <tr>
+          <td><code>403 Forbidden</code></td>
+          <td>Access Denied</td>
+          <td>Authenticated user lacks required permission or account is deactivated</td>
+        </tr>
+        <tr>
+          <td><code>404 Not Found</code></td>
+          <td>Not Found</td>
+          <td>Target entity UUID or slug not found in database</td>
+        </tr>
+        <tr>
+          <td><code>500 Server Error</code></td>
+          <td>Internal Error</td>
+          <td>Unhandled runtime exception or database connectivity degradation</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr>
+
+  <footer>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

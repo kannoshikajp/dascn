@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PC Builder &amp; Hardware Compatibility API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>PC Builder &amp; Hardware Compatibility API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/pc-builder</code></p>
+    <p><strong>Target Service:</strong> <code>joppe.backend.domain.interaction.PcBuildService</code></p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>Endpoints Specification</h2>
+      <ul>
+        <li>
+          <strong>Simulate Hardware Compatibility:</strong>
+          <code>POST /api/v1/pc-builder/simulate</code> &bull; Security: Public (<code>PC_BUILD_SIMULATE</code>)
+          <p>Evaluates hardware interoperability (CPU socket vs Motherboard socket, RAM DDR4/DDR5 standard, PSU wattage vs total GPU/CPU TDP, and cooler dimensions).</p>
+        </li>
+        <li>
+          <strong>Save Custom Build:</strong>
+          <code>POST /api/v1/pc-builder/save</code> &bull; Security: Authenticated (<code>PC_BUILD_MANAGE</code>)
+          <p>Saves custom PC part configuration into customer account.</p>
+        </li>
+        <li>
+          <strong>List Customer Builds:</strong>
+          <code>GET /api/v1/pc-builder/my</code> &bull; Security: Authenticated (<code>PC_BUILD_MANAGE</code>)
+        </li>
+        <li>
+          <strong>Add PC Build to Cart:</strong>
+          <code>POST /api/v1/pc-builder/{id}/add-to-cart</code> &bull; Security: Authenticated (<code>CART_MANAGE</code>)
+          <p>Transfers all compatible components of the saved build into the customer shopping cart.</p>
+        </li>
+      </ul>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

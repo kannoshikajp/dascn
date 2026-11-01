@@ -13,6 +13,18 @@ public interface SupplierRepository extends JpaRepository<Supplier, UUID> {
 
     boolean existsBySupplierName(String supplierName);
 
+    boolean existsBySupplierNameAndIdNot(String supplierName, UUID id);
+
+    @Query("SELECT s FROM Supplier s WHERE " +
+           "(:isActive IS NULL OR s.isActive = :isActive) AND " +
+           "(:search IS NULL OR " +
+           " LOWER(s.supplierName) LIKE :search OR " +
+           " LOWER(s.contactPerson) LIKE :search OR " +
+           " LOWER(s.phoneNumber) LIKE :search OR " +
+           " LOWER(s.email) LIKE :search) " +
+           "ORDER BY s.createdAt DESC")
+    List<Supplier> findFiltered(@Param("isActive") Boolean isActive, @Param("search") String search);
+
     @Modifying
     @Query("UPDATE Supplier s SET s.isActive = :isActive WHERE s.id = :id")
     int updateActiveStatus(@Param("id") UUID id, @Param("isActive") boolean isActive);

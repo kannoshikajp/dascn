@@ -21,6 +21,14 @@ class CategoryManagementService {
     return [];
   }
 
+  Future<String> exportCategoriesCsv({String? search, bool? isActive}) async {
+    final params = <String, String>{};
+    if (search != null && search.isNotEmpty) params['search'] = search;
+    if (isActive != null) params['isActive'] = isActive.toString();
+
+    return await _apiClient.getRaw('/api/v1/admin/categories/export', params);
+  }
+
   Future<List<CategoryNode>> listCategoryTree({bool? isActive}) async {
     final params = <String, String>{};
     if (isActive != null) params['isActive'] = isActive.toString();

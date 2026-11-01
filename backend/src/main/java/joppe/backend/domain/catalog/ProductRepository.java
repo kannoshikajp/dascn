@@ -14,6 +14,12 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     boolean existsBySlug(String slug);
 
+    Optional<Product> findBySku(String sku);
+
+    boolean existsBySku(String sku);
+
+    List<Product> findByParentSku(String parentSku);
+
     @Query("SELECT COUNT(DISTINCT p.id) FROM Product p LEFT JOIN ProductCategory pc ON p.id = pc.productId WHERE p.categoryId = :categoryId OR pc.categoryId = :categoryId")
     long countByCategoryId(@Param("categoryId") Integer categoryId);
 
@@ -35,10 +41,9 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("SELECT p.productName FROM Product p WHERE p.id = :id")
     Optional<String> findProductNameById(@Param("id") UUID id);
 
-    @Query("SELECT p.warrantyMonths FROM Product p WHERE p.id = :id")
-    Optional<Integer> findWarrantyMonthsById(@Param("id") UUID id);
-
     @Modifying
     @Query("UPDATE Product p SET p.isActive = :isActive WHERE p.id = :id")
     int updateActiveStatus(@Param("id") UUID id, @Param("isActive") boolean isActive);
+
+    long countByIsActiveTrue();
 }

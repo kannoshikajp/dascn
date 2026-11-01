@@ -10,6 +10,13 @@ public record CreateProductRequest(
         @Size(max = 255)
         String productName,
 
+        @NotBlank(message = "SKU is required")
+        @Size(max = 100)
+        String sku,
+
+        @Size(max = 100)
+        String parentSku,
+
         @Size(max = 255)
         String slug,
 
@@ -19,20 +26,11 @@ public record CreateProductRequest(
 
         Integer primaryCategoryId,
 
-        String shortDescription,
-
-        String description,
-
-        String specifications,
-
-        Integer warrantyMonths,
-
-        String thumbnailUrl,
-
         Boolean isActive,
 
-        // Optional default initial variant fields
-        String sku,
+        String thumbnailUrl,
+        String description,
+        String attributes,
         BigDecimal listPrice,
         BigDecimal salePrice,
         Integer stockQuantity

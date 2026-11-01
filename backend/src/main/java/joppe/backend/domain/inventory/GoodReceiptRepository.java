@@ -15,9 +15,26 @@ public interface GoodReceiptRepository extends JpaRepository<GoodReceipt, UUID> 
 
     boolean existsByReceiptCode(String receiptCode);
 
+    Optional<GoodReceipt> findByOrderId(UUID orderId);
+
+    boolean existsByOrderId(UUID orderId);
+
     List<GoodReceipt> findBySupplierId(UUID supplierId);
 
     List<GoodReceipt> findByStaffId(UUID staffId);
+
+    @Query("SELECT r FROM GoodReceipt r WHERE " +
+           "(:receiptType IS NULL OR r.receiptType = :receiptType) AND " +
+           "(:status IS NULL OR r.status = :status) AND " +
+           "(:supplierId IS NULL OR r.supplierId = :supplierId) AND " +
+           "(:search IS NULL OR LOWER(r.receiptCode) LIKE :search OR (r.note IS NOT NULL AND LOWER(r.note) LIKE :search)) " +
+           "ORDER BY r.createdAt DESC")
+    List<GoodReceipt> findFiltered(
+            @Param("receiptType") String receiptType,
+            @Param("status") String status,
+            @Param("supplierId") UUID supplierId,
+            @Param("search") String search
+    );
 
     @Modifying
     @Query("UPDATE GoodReceipt r SET r.status = :status WHERE r.id = :id")

@@ -28,6 +28,16 @@ class ApiClient {
   }
 
   String? get token => _token;
+  bool get hasToken => _token != null && _token!.isNotEmpty;
+
+  /// Resolves relative media paths (e.g. '/uploads/products/xyz.webp') to absolute URLs with baseUrl.
+  String resolveMediaUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return '';
+    final trimmed = url.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    final cleanPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
+    return '$baseUrl$cleanPath';
+  }
 
   Map<String, String> _headers() {
     final map = {
@@ -40,6 +50,31 @@ class ApiClient {
     return map;
   }
 
+  Future<Map<String, dynamic>> checkLiveness() async {
+    try {
+      final uri = Uri.parse('$baseUrl/live');
+      final response = await _client.get(uri).timeout(const Duration(seconds: 5));
+      if (response.body.isNotEmpty) {
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+      }
+      return {
+        'status': response.statusCode == 200 ? 'UP' : 'DOWN',
+        'message': response.statusCode == 200
+            ? 'Backend is live and healthy.'
+            : 'Cannot access /live: server returned HTTP ${response.statusCode}',
+      };
+    } catch (e) {
+      return {
+        'status': 'DOWN',
+        'message': 'Cannot access /live at $baseUrl: connection failed. Please ensure the backend server is running.',
+        'error': e.toString(),
+      };
+    }
+  }
+
   Future<dynamic> get(String endpoint, [Map<String, String>? queryParams]) async {
     Uri uri = Uri.parse('$baseUrl$endpoint');
     if (queryParams != null && queryParams.isNotEmpty) {
@@ -48,6 +83,22 @@ class ApiClient {
 
     final response = await _client.get(uri, headers: _headers());
     return _handleResponse(response);
+  }
+
+  Future<String> getRaw(String endpoint, [Map<String, String>? queryParams]) async {
+    Uri uri = Uri.parse('$baseUrl$endpoint');
+    if (queryParams != null && queryParams.isNotEmpty) {
+      uri = uri.replace(queryParameters: queryParams);
+    }
+
+    final headers = _headers();
+    headers['Accept'] = 'text/csv, text/plain, */*';
+
+    final response = await _client.get(uri, headers: headers);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return utf8.decode(response.bodyBytes);
+    }
+    throw ApiException(response.statusCode, 'HTTP ${response.statusCode}: ${response.body}');
   }
 
   Future<dynamic> post(String endpoint, [Map<String, dynamic>? body]) async {

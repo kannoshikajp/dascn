@@ -14,6 +14,7 @@ import joppe.backend.admin.dto.UpdateProductStatusRequest;
 import joppe.backend.admin.dto.UpdateVariantRequest;
 import joppe.backend.admin.service.AdminProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -46,6 +47,21 @@ public class AdminProductController {
             @RequestParam(required = false) Integer brandId,
             @RequestParam(required = false) Boolean isActive) {
         return adminProductService.listProducts(search, categoryId, brandId, isActive);
+    }
+
+    @GetMapping(value = "/export", produces = "text/csv; charset=UTF-8")
+    @PreAuthorize("hasAnyAuthority('CATALOG_READ', 'CATALOG_WRITE')")
+    @Operation(summary = "Export products to CSV file")
+    public ResponseEntity<byte[]> exportProducts(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) Integer brandId,
+            @RequestParam(required = false) Boolean isActive) {
+        byte[] csv = adminProductService.exportProductsCsv(search, categoryId, brandId, isActive);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"products.csv\"")
+                .header(HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
+                .body(csv);
     }
 
     @GetMapping("/{id}")

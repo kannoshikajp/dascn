@@ -30,11 +30,20 @@ logs/
 *.tmp
 *.temp
 uploads/
+/*.png
 
 # Environment & local config
 .env
 .env.*
 !.env.example
+!.env.dev
+!.env.dev.*
+!.env.prod
+!.env.prod.*
+!**/env.dev.json
+!**/env.prod.json
+!**/.env.dev
+!**/.env.prod
 application-local.properties
 application-local.yml
 application-local.yaml
@@ -101,3 +110,10 @@ dist/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
+
+# Task runner
+.task/
+
+# External / temporary coworker app
+joppe_flutter_app/
+

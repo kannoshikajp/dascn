@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - RBAC Roles &amp; Permissions API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Admin &mdash; RBAC Roles &amp; Permissions API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/admin</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.admin.controller.AdminRbacController</code></p>
+    <p><strong>Security:</strong> All endpoints require <code>ROLE_MANAGE</code> authority</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. List All Roles</h2>
+      <p>Lists all configured system roles along with their assigned permission keys.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/roles</code></li>
+        <li><strong>Security:</strong> Requires <code>ROLE_MANAGE</code></li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>[
+  {
+    "id": 1,
+    "roleName": "ROLE_ADMIN",
+    "description": "Administrator with full system privileges",
+    "permissions": [
+      "AUTH_ME",
+      "AUTH_CHANGE_PASSWORD",
+      "USER_MANAGE",
+      "ROLE_MANAGE",
+      "CATALOG_READ",
+      "CATALOG_WRITE",
+      "INVENTORY_READ",
+      "INVENTORY_WRITE",
+      "ORDER_MANAGE"
+    ]
+  },
+  {
+    "id": 2,
+    "roleName": "ROLE_STAFF",
+    "description": "Store operational staff",
+    "permissions": [
+      "CATALOG_READ",
+      "CATALOG_WRITE",
+      "ORDER_MANAGE",
+      "INVENTORY_READ"
+    ]
+  },
+  {
+    "id": 3,
+    "roleName": "ROLE_CUSTOMER",
+    "description": "Registered retail customer",
+    "permissions": [
+      "AUTH_ME",
+      "AUTH_CHANGE_PASSWORD",
+      "USER_READ_SELF",
+      "ADDRESS_MANAGE",
+      "CATALOG_READ",
+      "CART_MANAGE",
+      "PROMOTION_READ",
+      "ORDER_CREATE",
+      "ORDER_READ_OWN",
+      "PAYMENT_PROCESS",
+      "RETURN_REQUEST",
+      "REVIEW_CREATE",
+      "PC_BUILD_MANAGE",
+      "REVIEW_READ",
+      "PC_BUILD_SIMULATE",
+      "ORDER_TRACK_GUEST"
+    ]
+  }
+]</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Get Role by ID</h2>
+      <p>Retrieves specific role details and its complete permission list.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/roles/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>ROLE_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (integer)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns a single <code>RoleDto</code> matching the role item structure.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Create Role</h2>
+      <p>Creates a new role definition with an initial set of assigned permission strings.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/roles</code></li>
+        <li><strong>Security:</strong> Requires <code>ROLE_MANAGE</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "roleName": "ROLE_WAREHOUSE_MANAGER",
+  "description": "Staff in charge of stock imports and audits",
+  "permissions": [
+    "INVENTORY_READ",
+    "INVENTORY_WRITE",
+    "CATALOG_READ"
+  ]
+}</code></pre>
+
+      <h3>Success Response (201 Created)</h3>
+      <p>Returns created <code>RoleDto</code> object.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. Update Role Permissions</h2>
+      <p>Overwrites the active set of permissions associated with an existing role.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>PUT</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/roles/{id}/permissions</code></li>
+        <li><strong>Security:</strong> Requires <code>ROLE_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (integer)</li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "permissions": [
+    "CATALOG_READ",
+    "INVENTORY_READ",
+    "INVENTORY_WRITE"
+  ]
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>RoleDto</code> object.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>5. Delete Role</h2>
+      <p>Deletes a custom role from the database. Default seeded system roles cannot be deleted.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>DELETE</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/roles/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>ROLE_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (integer)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>{
+  "success": true,
+  "message": "Role deleted successfully"
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>6. List All System Permissions</h2>
+      <p>Returns all registered system permission keys and descriptions.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/permissions</code></li>
+        <li><strong>Security:</strong> Requires <code>ROLE_MANAGE</code></li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Permission Key</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td><code>AUTH_ME</code></td><td>View and edit own authenticated user profile</td></tr>
+          <tr><td>2</td><td><code>AUTH_CHANGE_PASSWORD</code></td><td>Change own account password</td></tr>
+          <tr><td>3</td><td><code>USER_READ_SELF</code></td><td>Access personal account information</td></tr>
+          <tr><td>4</td><td><code>USER_MANAGE</code></td><td>CRUD user accounts and toggle active status</td></tr>
+          <tr><td>5</td><td><code>ROLE_MANAGE</code></td><td>Manage roles and permission mappings</td></tr>
+          <tr><td>6</td><td><code>ADDRESS_MANAGE</code></td><td>Manage personal shipping address book</td></tr>
+          <tr><td>7</td><td><code>CATALOG_READ</code></td><td>View categories, brands, products, and variants</td></tr>
+          <tr><td>8</td><td><code>CATALOG_WRITE</code></td><td>Create, edit, toggle, or delete catalog entities</td></tr>
+          <tr><td>9</td><td><code>INVENTORY_READ</code></td><td>View warehouse stock, suppliers, and purchase receipts</td></tr>
+          <tr><td>10</td><td><code>INVENTORY_WRITE</code></td><td>Manage suppliers, inbound receipts, and stock levels</td></tr>
+          <tr><td>11</td><td><code>CART_MANAGE</code></td><td>Manage shopping cart line items</td></tr>
+          <tr><td>12</td><td><code>PROMOTION_READ</code></td><td>View promotional discounts and vouchers</td></tr>
+          <tr><td>13</td><td><code>PROMOTION_WRITE</code></td><td>Create and manage promotional campaigns</td></tr>
+          <tr><td>14</td><td><code>ORDER_CREATE</code></td><td>Place and checkout shopping orders</td></tr>
+          <tr><td>15</td><td><code>ORDER_READ_OWN</code></td><td>View customer order history and order details</td></tr>
+          <tr><td>16</td><td><code>ORDER_MANAGE</code></td><td>Manage order statuses, fulfillments, and refunds</td></tr>
+          <tr><td>17</td><td><code>PAYMENT_PROCESS</code></td><td>Create payment intents and verify transactions</td></tr>
+          <tr><td>18</td><td><code>SHIPMENT_MANAGE</code></td><td>Generate tracking numbers and fulfill consignments</td></tr>
+          <tr><td>19</td><td><code>RETURN_REQUEST</code></td><td>Submit customer return and warranty requests</td></tr>
+          <tr><td>20</td><td><code>RETURN_MANAGE</code></td><td>Inspect and approve/reject returned goods</td></tr>
+          <tr><td>21</td><td><code>REVIEW_CREATE</code></td><td>Submit product ratings and customer reviews</td></tr>
+          <tr><td>22</td><td><code>REVIEW_MANAGE</code></td><td>Moderate, approve, or hide customer reviews</td></tr>
+          <tr><td>23</td><td><code>REVIEW_READ</code></td><td>Read approved product reviews</td></tr>
+          <tr><td>24</td><td><code>PC_BUILD_MANAGE</code></td><td>Save, update, and manage customized PC builds</td></tr>
+          <tr><td>25</td><td><code>PC_BUILD_SIMULATE</code></td><td>Simulate hardware compatibility checks without saving</td></tr>
+          <tr><td>26</td><td><code>ORDER_TRACK_GUEST</code></td><td>Track delivery progress with order code and phone</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

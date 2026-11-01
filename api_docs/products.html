@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Products &amp; Hardware Variants API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Products &amp; Hardware Variants API</h1>
+    <p><strong>Public Path:</strong> <code>/api/v1/products</code> &bull; <strong>Admin Path:</strong> <code>/api/v1/admin/products</code></p>
+    <p><strong>Controllers:</strong> <code>ProductCatalogController</code> (Public) &amp; <code>AdminProductController</code> (Admin)</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>Architecture &amp; Variant Relationship Model</h2>
+      <p>
+        The product catalog utilizes a unified SKU-based relationship model:
+      </p>
+      <ul>
+        <li><strong>Product Entity:</strong> Retains core identity, unique <code>sku</code>, optional <code>parentSku</code>, <code>productName</code>, <code>slug</code>, <code>brandId</code>, category mappings, and pricing/stock summary bounds.</li>
+        <li><strong>Variant Linking (<code>isVariantOf</code>):</strong> Products link to family variants via <code>parentSku</code>. Querying any product resolves its family root and recursively traverses all connected siblings and children (DFS resolution).</li>
+        <li><strong>Auto-slug Generation:</strong> If <code>slug</code> is omitted during creation, it defaults to the SKU with spaces replaced by hyphens.</li>
+        <li><strong>ProductVariant Entity:</strong> Holds physical inventory details (SKU, thumbnail URL, Markdown description, media album UUIDs, JSONB hardware specs, listPrice, salePrice, and stock counts).</li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>1. Public: List Active Products</h2>
+      <p>Lists active store products with search keyword, category, and brand filters.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/products</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+      </ul>
+
+      <h3>Query Parameters</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>search</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Search keyword across product name, SKU, or slug</td>
+          </tr>
+          <tr>
+            <td><code>categoryId</code></td>
+            <td>integer</td>
+            <td>No</td>
+            <td>Filter by category ID</td>
+          </tr>
+          <tr>
+            <td><code>brandId</code></td>
+            <td>integer</td>
+            <td>No</td>
+            <td>Filter by brand ID</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>[
+  {
+    "id": "e83910c0-1234-4b55-a012-3c891a921d7b",
+    "productName": "ASUS ROG Strix GeForce RTX 4080 Super",
+    "sku": "ROG-STRIX-RTX4080S-O16G",
+    "parentSku": null,
+    "slug": "asus-rog-strix-rtx-4080-super",
+    "brandId": 5,
+    "brandName": "ASUS",
+    "isActive": true,
+    "createdAt": "2026-10-22T04:00:00.000Z",
+    "updatedAt": "2026-10-22T04:00:00.000Z",
+    "categories": [
+      {
+        "id": 2,
+        "categoryName": "Graphics Cards (GPU)",
+        "slug": "gpu",
+        "isPrimary": true
+      }
+    ],
+    "variants": [
+      {
+        "id": "7fa4189b-90f3-4212-984e-cc02931a5411",
+        "sku": "ROG-STRIX-RTX4080S-O16G",
+        "variantName": "OC Edition 16GB GDDR6X Black",
+        "thumbnailUrl": "/uploads/products/rtx4080_thumb.webp",
+        "description": "## ASUS ROG Strix GeForce RTX 4080 Super OC Edition\n\nAxial-tech fans...",
+        "albumUrls": [
+          "/uploads/products/rtx4080_angle1.webp"
+        ],
+        "albumMediaIds": [
+          "11111111-2222-3333-4444-555555555555"
+        ],
+        "attributes": "{\"color\":\"Black\",\"memory\":\"16GB GDDR6X\"}",
+        "listPrice": 32990000.00,
+        "salePrice": 30990000.00,
+        "quantityOnHand": 20,
+        "quantityReserved": 2,
+        "availableQuantity": 18,
+        "weightGram": 1970.00,
+        "isActive": true
+      }
+    ],
+    "minPrice": 30990000.00,
+    "maxPrice": 30990000.00,
+    "totalStock": 18
+  }
+]</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Public: Get Product by ID or Slug</h2>
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Paths:</strong> <code>/api/v1/products/{id}</code> or <code>/api/v1/products/slug/{slug}</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns a single <code>ProductResponse</code> object.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Admin: List All Products</h2>
+      <p>Lists all products including draft and inactive items.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/products</code></li>
+        <li><strong>Security:</strong> Requires <code>CATALOG_READ</code> or <code>CATALOG_WRITE</code></li>
+        <li><strong>Query Parameters:</strong> <code>search</code>, <code>categoryId</code>, <code>brandId</code>, <code>isActive</code></li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns array of <code>ProductResponse</code> objects.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. Admin: Create Product</h2>
+      <p>Creates a product and provisions an initial default variant.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/products</code></li>
+        <li><strong>Security:</strong> Requires <code>CATALOG_WRITE</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "productName": "ASUS ROG Strix G16",
+  "sku": "SKU-ROG-G16-01",
+  "parentSku": null,
+  "slug": "asus-rog-strix-g16",
+  "brandId": 1,
+  "categoryIds": [1, 2],
+  "primaryCategoryId": 1,
+  "isActive": true,
+  "thumbnailUrl": "/uploads/products/rog_g16.webp",
+  "description": "# ASUS ROG Strix G16 Gaming Laptop",
+  "listPrice": 45000000.00,
+  "salePrice": 42000000.00,
+  "stockQuantity": 12
+}</code></pre>
+
+      <h3>Success Response (201 Created)</h3>
+      <p>Returns created <code>ProductResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>5. Admin: Update Product</h2>
+      <p>Updates product details, SKU, parentSku, brand, pricing, and category mappings.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>PUT</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/products/{id}</code></li>
+        <li><strong>Security:</strong> Requires <code>CATALOG_WRITE</code></li>
+        <li><strong>Path Variable:</strong> <code>id</code> (UUID)</li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "productName": "ASUS ROG Strix G16 2026",
+  "sku": "SKU-ROG-G16-01",
+  "parentSku": null,
+  "slug": "asus-rog-strix-g16",
+  "brandId": 1,
+  "categoryIds": [1, 2],
+  "primaryCategoryId": 1,
+  "isActive": true,
+  "listPrice": 44000000.00,
+  "salePrice": 41500000.00,
+  "stockQuantity": 15
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>ProductResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>6. Admin: Toggle Product Status &amp; Delete Product</h2>
+      <ul>
+        <li><strong>Toggle Status:</strong> <code>PATCH /api/v1/admin/products/{id}/status</code> &bull; Body: <code>{"isActive": false}</code> &rarr; <code>204 No Content</code></li>
+        <li><strong>Delete Product:</strong> <code>DELETE /api/v1/admin/products/{id}</code> &rarr; <code>204 No Content</code> (Cascades variants and category join tables)</li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>7. Admin: Product Variant Sub-Resource Endpoints</h2>
+      <ul>
+        <li><strong>List Variants:</strong> <code>GET /api/v1/admin/products/{productId}/variants</code> &rarr; <code>200 OK</code> (Array of <code>ProductVariantSummary</code>)</li>
+        <li><strong>Create Variant:</strong> <code>POST /api/v1/admin/products/{productId}/variants</code> &rarr; <code>201 Created</code></li>
+        <li><strong>Update Variant:</strong> <code>PUT /api/v1/admin/products/{productId}/variants/{variantId}</code> &rarr; <code>200 OK</code></li>
+        <li><strong>Delete Variant:</strong> <code>DELETE /api/v1/admin/products/{productId}/variants/{variantId}</code> &rarr; <code>204 No Content</code></li>
+      </ul>
+
+      <h3>Create Variant Request Body</h3>
+      <pre><code>{
+  "sku": "RAM-DDR5-32G-6000-RGB-BLK",
+  "variantCode": "DDR5-32G-6000-BLK",
+  "variantName": "32GB (2x16GB) 6000MHz CL30 Black RGB",
+  "thumbnailUrl": "/uploads/products/ram_thumb.webp",
+  "description": "# Corsair Dominator Titanium DDR5",
+  "mediaIds": [
+    "11111111-2222-3333-4444-555555555555"
+  ],
+  "attributes": "{\"capacity\":\"32GB\",\"speed\":\"6000MHz\",\"color\":\"Black\"}",
+  "listPrice": 3490000.00,
+  "salePrice": 3190000.00,
+  "quantityOnHand": 40,
+  "reorderLevel": 5,
+  "weightGram": 150.00,
+  "isActive": true
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>8. Admin: Export Products CSV</h2>
+      <p>Generates and downloads a CSV export file with UTF-8 BOM encoding containing filtered or all products.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/products/export</code></li>
+        <li><strong>Security:</strong> Bearer JWT (<code>CATALOG_READ</code> or <code>CATALOG_WRITE</code>)</li>
+        <li><strong>Produces:</strong> <code>text/csv; charset=UTF-8</code></li>
+      </ul>
+
+      <h3>Query Parameters</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>search</code></td>
+            <td>String</td>
+            <td>No</td>
+            <td>Keyword search on product name, SKU, parent SKU, or slug</td>
+          </tr>
+          <tr>
+            <td><code>categoryId</code></td>
+            <td>Integer</td>
+            <td>No</td>
+            <td>Filter by specific category ID</td>
+          </tr>
+          <tr>
+            <td><code>brandId</code></td>
+            <td>Integer</td>
+            <td>No</td>
+            <td>Filter by specific brand ID</td>
+          </tr>
+          <tr>
+            <td><code>isActive</code></td>
+            <td>Boolean</td>
+            <td>No</td>
+            <td>Filter by active/inactive status</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

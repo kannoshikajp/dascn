@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Analytics &amp; KPIs API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Admin &mdash; Analytics &amp; KPIs API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/admin/analytics</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.admin.controller.AdminAnalyticsController</code></p>
+    <p><strong>Security:</strong> Requires <code>ORDER_MANAGE</code>, <code>CATALOG_READ</code>, <code>INVENTORY_READ</code>, or staff/admin role</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. Get Store Overview Metrics</h2>
+      <p>Aggregates revenue totals, 7-day sales velocity trend, inventory health status, recent orders, and user metrics for executive dashboard display.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/admin/analytics/overview</code></li>
+        <li><strong>Security:</strong> Authenticated staff / admin</li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>{
+  "revenueSummary": {
+    "totalRevenue": 245000000.00,
+    "pendingRevenue": 15000000.00,
+    "totalOrders": 32,
+    "pendingOrders": 2
+  },
+  "salesTrend": [
+    {
+      "date": "2026-10-25",
+      "dateLabel": "25/10",
+      "orderCount": 4,
+      "totalRevenue": 35000000.00
+    },
+    {
+      "date": "2026-10-26",
+      "dateLabel": "26/10",
+      "orderCount": 6,
+      "totalRevenue": 52000000.00
+    }
+  ],
+  "inventoryHealth": {
+    "totalProducts": 64,
+    "activeProducts": 58,
+    "healthyCount": 50,
+    "lowStockCount": 6,
+    "outOfStockCount": 2
+  },
+  "recentOrders": [
+    {
+      "id": "77777777-8888-9999-aaaa-bbbbbbbbbbbb",
+      "orderCode": "ORD-20261031-84920",
+      "recipientName": "Nguyen Van A",
+      "finalAmount": 31040000.00,
+      "orderStatus": "ACCEPTED",
+      "paymentStatus": "PAID",
+      "createdAt": "2026-10-31T08:00:00.000Z"
+    }
+  ],
+  "userMetrics": {
+    "totalUsers": 128,
+    "activeUsers": 122
+  }
+}</code></pre>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

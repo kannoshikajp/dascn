@@ -44,4 +44,13 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     @Modifying
     @Query("UPDATE ProductVariant v SET v.salePrice = :salePrice WHERE v.id = :id")
     int updateSalePrice(@Param("id") UUID id, @Param("salePrice") BigDecimal salePrice);
+
+    @Query("SELECT COUNT(v) FROM ProductVariant v WHERE v.quantityOnHand <= 0")
+    long countOutOfStockVariants();
+
+    @Query("SELECT COUNT(v) FROM ProductVariant v WHERE v.quantityOnHand > 0 AND v.quantityOnHand <= v.reorderLevel")
+    long countLowStockVariants();
+
+    @Query("SELECT COUNT(v) FROM ProductVariant v WHERE v.quantityOnHand > v.reorderLevel")
+    long countHealthyStockVariants();
 }

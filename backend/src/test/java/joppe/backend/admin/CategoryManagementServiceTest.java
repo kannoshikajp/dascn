@@ -134,4 +134,18 @@ class CategoryManagementServiceTest {
         assertEquals(1, root.children().get(0).children().size());
         assertEquals("Gaming", root.children().get(0).children().get(0).categoryName());
     }
+
+    @Test
+    void exportCategoriesCsv_Success() {
+        Category laptop = Category.builder().id(1).parentId(null).categoryName("Laptops").slug("laptops").isActive(true).build();
+        when(categoryRepository.findAllByOrderByCategoryNameAsc()).thenReturn(List.of(laptop));
+        when(productRepository.countByCategoryId(1)).thenReturn(5L);
+
+        byte[] csvBytes = service.exportCategoriesCsv(null, null);
+
+        assertNotNull(csvBytes);
+        String csv = new String(csvBytes, java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(csv.startsWith("﻿ID,Category Name,Slug,Parent ID,Parent Name,Active,Product Count,Child Count,Created At"));
+        assertTrue(csv.contains("1,Laptops,laptops,,,Active,5,0,"));
+    }
 }

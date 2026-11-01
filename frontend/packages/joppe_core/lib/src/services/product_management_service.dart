@@ -28,6 +28,21 @@ class ProductManagementService {
     return [];
   }
 
+  Future<String> exportProductsCsv({
+    String? search,
+    int? categoryId,
+    int? brandId,
+    bool? isActive,
+  }) async {
+    final params = <String, String>{};
+    if (search != null && search.isNotEmpty) params['search'] = search;
+    if (categoryId != null) params['categoryId'] = categoryId.toString();
+    if (brandId != null) params['brandId'] = brandId.toString();
+    if (isActive != null) params['isActive'] = isActive.toString();
+
+    return await _apiClient.getRaw('/api/v1/admin/products/export', params);
+  }
+
   Future<ProductItem> getProduct(String id) async {
     final response = await _apiClient.get('/api/v1/admin/products/$id');
     return ProductItem.fromJson(response as Map<String, dynamic>);
@@ -35,34 +50,32 @@ class ProductManagementService {
 
   Future<ProductItem> createProduct({
     required String productName,
+    required String sku,
+    String? parentSku,
     String? slug,
     int? brandId,
     List<int>? categoryIds,
     int? primaryCategoryId,
-    String? shortDescription,
-    String? description,
-    String? specifications,
-    int? warrantyMonths,
-    String? thumbnailUrl,
     bool isActive = true,
-    String? sku,
+    String? versionCode,
+    String? variantCode,
+    String? thumbnailUrl,
+    String? description,
     double? listPrice,
     double? salePrice,
     int? stockQuantity,
   }) async {
     final body = {
       'productName': productName,
+      'sku': sku,
+      if (parentSku != null && parentSku.isNotEmpty) 'parentSku': parentSku,
       if (slug != null && slug.isNotEmpty) 'slug': slug,
       'brandId': brandId,
       'categoryIds': ?categoryIds,
       'primaryCategoryId': ?primaryCategoryId,
-      'shortDescription': shortDescription,
-      'description': description,
-      'specifications': specifications,
-      'warrantyMonths': warrantyMonths,
-      'thumbnailUrl': thumbnailUrl,
       'isActive': isActive,
-      if (sku != null && sku.isNotEmpty) 'sku': sku,
+      if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
+      if (description != null) 'description': description,
       'listPrice': ?listPrice,
       'salePrice': ?salePrice,
       'stockQuantity': ?stockQuantity,
@@ -75,29 +88,34 @@ class ProductManagementService {
   Future<ProductItem> updateProduct({
     required String id,
     required String productName,
+    String? sku,
+    String? parentSku,
+    String? versionCode,
     String? slug,
     int? brandId,
     List<int>? categoryIds,
     int? primaryCategoryId,
-    String? shortDescription,
-    String? description,
-    String? specifications,
-    int? warrantyMonths,
-    String? thumbnailUrl,
     bool? isActive,
+    double? listPrice,
+    double? salePrice,
+    int? stockQuantity,
+    String? thumbnailUrl,
+    String? description,
   }) async {
     final body = {
       'productName': productName,
+      if (sku != null && sku.isNotEmpty) 'sku': sku,
+      if (parentSku != null && parentSku.isNotEmpty) 'parentSku': parentSku,
       if (slug != null && slug.isNotEmpty) 'slug': slug,
       'brandId': brandId,
       'categoryIds': ?categoryIds,
       'primaryCategoryId': ?primaryCategoryId,
-      'shortDescription': shortDescription,
-      'description': description,
-      'specifications': specifications,
-      'warrantyMonths': warrantyMonths,
-      'thumbnailUrl': thumbnailUrl,
-      'isActive': isActive,
+      if (isActive != null) 'isActive': isActive,
+      'listPrice': ?listPrice,
+      'salePrice': ?salePrice,
+      'stockQuantity': ?stockQuantity,
+      if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
+      if (description != null) 'description': description,
     };
 
     final response = await _apiClient.put('/api/v1/admin/products/$id', body);
@@ -129,7 +147,12 @@ class ProductManagementService {
   Future<ProductVariantSummary> createVariant(
     String productId, {
     required String sku,
+    String? versionCode,
+    String? variantCode,
     required String variantName,
+    String? thumbnailUrl,
+    String? description,
+    List<String>? mediaIds,
     String? attributes,
     double? listPrice,
     double? salePrice,
@@ -140,7 +163,12 @@ class ProductManagementService {
   }) async {
     final body = {
       'sku': sku,
+      if (versionCode != null) 'versionCode': versionCode,
+      if (variantCode != null) 'variantCode': variantCode,
       'variantName': variantName,
+      'thumbnailUrl': thumbnailUrl,
+      'description': description,
+      'mediaIds': ?mediaIds,
       'attributes': attributes,
       'listPrice': ?listPrice,
       'salePrice': ?salePrice,
@@ -157,7 +185,12 @@ class ProductManagementService {
     String productId,
     String variantId, {
     required String sku,
+    String? versionCode,
+    String? variantCode,
     required String variantName,
+    String? thumbnailUrl,
+    String? description,
+    List<String>? mediaIds,
     String? attributes,
     double? listPrice,
     double? salePrice,
@@ -168,7 +201,12 @@ class ProductManagementService {
   }) async {
     final body = {
       'sku': sku,
+      if (versionCode != null) 'versionCode': versionCode,
+      if (variantCode != null) 'variantCode': variantCode,
       'variantName': variantName,
+      'thumbnailUrl': thumbnailUrl,
+      'description': description,
+      'mediaIds': ?mediaIds,
       'attributes': attributes,
       'listPrice': ?listPrice,
       'salePrice': ?salePrice,

@@ -1,0 +1,422 @@
+{
+  "$schema": "https://design-dna.schema/v1.json",
+  "meta": {
+    "name": "JOPPE Tech Commerce & PC Builder (Sky Blue Light Theme)",
+    "description": "High-performance tech e-commerce identity featuring a clean, luminous Sky Blue and Clean Light canvas, 90-degree boxy flat architecture, fresh sky blue accents (#0284C7 / #0EA5E9), and tactile mechanical microinteractions.",
+    "source_references": [
+      "joppe_flutter_app/lib/core/theme/app_colors.dart",
+      "joppe_flutter_app/lib/widgets/common/cyber_effects.dart",
+      "joppe_flutter_app/lib/widgets/common/product_image.dart",
+      "joppe_flutter_app/lib/screens/build_pc_screen.dart",
+      "joppe_flutter_app/lib/screens/home_screen.dart",
+      "ui_design_spec.md"
+    ],
+    "created_at": "2026-10-23T11:30:00+07:00"
+  },
+  "design_system": {
+    "color": {
+      "palette_type": "split-complementary",
+      "primary": {
+        "hex": "#0284C7",
+        "role": "Fresh Sky Blue primary branding, prominent CTA buttons, active slot borders, and logo badges"
+      },
+      "secondary": {
+        "hex": "#0EA5E9",
+        "role": "Vivid Sky Blue top utility bar, search action, and secondary highlights"
+      },
+      "accent": {
+        "hex": "#E63946",
+        "role": "Crimson Red sale badges, cart item counters, and deletion triggers"
+      },
+      "neutral": {
+        "scale": [
+          "#0F172A",
+          "#1E293B",
+          "#475569",
+          "#64748B",
+          "#94A3B8",
+          "#CBD5E1",
+          "#E2E8F0",
+          "#F1F5F9",
+          "#F8FAFC",
+          "#FFFFFF"
+        ],
+        "usage": "Deep slate values (#0F172A, #1E293B) for primary titles and technical parameters ensuring crystal-clear WCAG AAA readability; mid slate (#475569, #64748B) for labels; light neutrals (#CBD5E1 down to #FFFFFF) construct crisp, luminous boxy surfaces and borders"
+      },
+      "semantic": {
+        "success": "#16A34A",
+        "warning": "#D97706",
+        "error": "#DC2626",
+        "info": "#0284C7"
+      },
+      "surface": {
+        "background": "#F8FAFC",
+        "card": "#FFFFFF",
+        "card_active": "#F0F9FF",
+        "elevated": "#E0F2FE"
+      },
+      "contrast_strategy": "High-contrast clean tech light mode with deep slate text on crisp white surfaces and sky blue highlights (WCAG AAA compliant)"
+    },
+    "typography": {
+      "type_scale": {
+        "display": {
+          "size": "24px",
+          "weight": "900",
+          "line_height": "1.2",
+          "tracking": "0.5px"
+        },
+        "heading_1": {
+          "size": "18px",
+          "weight": "800",
+          "line_height": "1.3",
+          "tracking": "0.3px"
+        },
+        "heading_2": {
+          "size": "15px",
+          "weight": "700",
+          "line_height": "1.35",
+          "tracking": "0.2px"
+        },
+        "heading_3": {
+          "size": "13px",
+          "weight": "700",
+          "line_height": "1.4",
+          "tracking": "0.1px"
+        },
+        "body": {
+          "size": "13px",
+          "weight": "500",
+          "line_height": "1.45",
+          "tracking": "0px"
+        },
+        "body_small": {
+          "size": "11px",
+          "weight": "500",
+          "line_height": "1.4",
+          "tracking": "0px"
+        },
+        "caption": {
+          "size": "10px",
+          "weight": "600",
+          "line_height": "1.3",
+          "tracking": "0.5px"
+        },
+        "overline": {
+          "size": "9px",
+          "weight": "900",
+          "line_height": "1.2",
+          "tracking": "1.2px"
+        }
+      },
+      "font_families": {
+        "heading": "Rajdhani, -apple-system, BlinkMacSystemFont, sans-serif",
+        "body": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "mono": "'JetBrains Mono', 'SF Mono', Consolas, monospace"
+      },
+      "font_style_notes": "Sharp monospace badges for technical branding and IDs; geometric sans-serif with bold letter-spacing for module titles; clear humanist sans for product specs"
+    },
+    "spacing": {
+      "base_unit": "4px",
+      "scale": [
+        "4px",
+        "8px",
+        "12px",
+        "16px",
+        "20px",
+        "24px",
+        "32px",
+        "48px"
+      ],
+      "content_density": "compact",
+      "section_rhythm": "Consistent 8px to 12px vertical gaps between modular cards; 1px dividing lines with zero rounded offsets"
+    },
+    "layout": {
+      "grid_system": "12-column responsive fluid grid on desktop; single-column stacked modular cards on mobile",
+      "max_content_width": "1440px",
+      "columns": 12,
+      "gutter": "12px",
+      "breakpoints": {
+        "xs": "320px",
+        "sm": "600px",
+        "md": "900px",
+        "lg": "1200px",
+        "xl": "1440px"
+      },
+      "alignment_tendency": "strict grid"
+    },
+    "shape": {
+      "border_radius": {
+        "small": "0px",
+        "medium": "0px",
+        "large": "0px",
+        "pill": "0px"
+      },
+      "border_usage": "Pure 90-degree boxy flat architecture (BorderRadius.zero). Every container has a crisp 1px to 1.5px tech border (#CBD5E1 or #0EA5E9 on active)",
+      "divider_style": "Crisp 1px solid tech line with #CBD5E1"
+    },
+    "elevation": {
+      "shadow_style": "none",
+      "levels": {
+        "low": "0 0 0 1px #CBD5E1",
+        "medium": "0 0 0 1.5px #0EA5E9, 0 4px 12px rgba(14, 165, 233, 0.2)",
+        "high": "0 0 0 2px #0284C7, 0 8px 24px rgba(14, 165, 233, 0.3)"
+      },
+      "depth_cues": "Crisp borders, subtle sky elevation tints (#E0F2FE), and overlapping rectangular blocks rather than heavy dark shadows"
+    },
+    "iconography": {
+      "style": "sharp geometric outline",
+      "stroke_weight": "1.75px",
+      "size_scale": {
+        "small": "16px",
+        "medium": "20px",
+        "large": "24px",
+        "xlarge": "32px"
+      },
+      "preferred_set": "Material Symbols Sharp / Custom Tech HUD Glyphs"
+    },
+    "motion": {
+      "easing": "cubic-bezier(0.25, 1, 0.5, 1)",
+      "duration_scale": {
+        "micro": "80ms",
+        "normal": "140ms",
+        "macro": "300ms"
+      },
+      "entrance_pattern": "instant scale-in (0.97 to 1.0) with zero blur lag",
+      "exit_pattern": "snappy collapse with linear opacity fade",
+      "philosophy": "Mechanical switch tactile precision (TactilePress with 80ms down / 140ms up curve and haptic selection click)"
+    },
+    "components": {
+      "button_style": "Sharp rectangular button with 1px border, uppercase bold text, zero radius, and tactile scale press",
+      "input_style": "Rectangular light gray box (#F1F5F9) with 1px border (#CBD5E1), crisp monospace placeholder, sky blue focus outline",
+      "card_style": "Flat 90-degree pure white panel (#FFFFFF) with 1px border (#CBD5E1), modular padding, and sky blue corner brackets",
+      "navigation_pattern": "Horizontal scrollable chips with zero radius and active sky blue indicator bars",
+      "modal_style": "Bottom sheet with square corners, sky blue header ribbon, and draggable scrollable sheet",
+      "list_style": "Separated cards with 8px to 10px spacing and 1px dividers",
+      "component_notes": "Strict 90-degree aesthetic applied to buttons, badges, chips, search inputs, modal sheets, and image frames"
+    }
+  },
+  "design_style": {
+    "aesthetic": {
+      "mood": [
+        "sky-fresh",
+        "luminous",
+        "clean",
+        "tactical",
+        "precise"
+      ],
+      "visual_metaphor": "Cleanroom semiconductor laboratory & modern engineering avionics display",
+      "era_influence": "2026+ Clean Tech & Fresh Azure Hardware Design",
+      "genre": "High-Tech Minimalist & Sky Blue Boxy Flat E-Commerce",
+      "personality_traits": [
+        "fresh",
+        "engineered",
+        "enthusiast-grade",
+        "airy"
+      ],
+      "adjectives": [
+        "sky-blue",
+        "bright",
+        "boxy",
+        "crisp",
+        "tactile"
+      ]
+    },
+    "visual_language": {
+      "complexity": "moderate",
+      "ornamentation": "subtle accents",
+      "whitespace_usage": "generous clean spacing on luminous background with intentional 10px-14px micro-spacing inside cards",
+      "visual_weight_distribution": "solid bottom summary bar with crisp floating top headers and prominent price badges",
+      "focal_strategy": "sky blue and crimson focal points directing attention to prices, active hardware slots, and AI recommendations",
+      "contrast_level": "crystal-clear high-contrast dark-on-light",
+      "texture_usage": "subtle diagonal cyber grid lines and clean sky shimmer gradient sweep"
+    },
+    "composition": {
+      "hierarchy_method": "color weight & scale contrast (sky blue price tags > bold black titles > slate specs)",
+      "balance_type": "asymmetric",
+      "flow_direction": "vertical slot progression with horizontal subcategory filtering",
+      "grouping_strategy": "strict rectangular containment cards",
+      "negative_space_role": "luminous separator ensuring effortless legibility across dense hardware specs"
+    },
+    "imagery": {
+      "photo_treatment": "crisp alpha-isolated hardware product renders against transparent or clean light backdrop with zero drop-shadow bleed",
+      "illustration_style": "schematic vector outlines and isometric hardware diagrams",
+      "graphic_elements": "90-degree HUD corner brackets (10px stroke), monospace version chips, and wattage meter bars",
+      "pattern_usage": "diagonal grid mesh painter on image fallbacks and tech shimmer sweep",
+      "image_shape": "strict rectangular 1:1 or 16:9 boxes with 1px solid tech border"
+    },
+    "interaction_feel": {
+      "feedback_style": "tactile click with physical haptic impulse on every touch",
+      "hover_behavior": "instant border color shift to #0EA5E9 and background shift to #F0F9FF with 0.98 scale compression",
+      "transition_personality": "snappy",
+      "loading_style": "tech shimmer with 1400ms repeat cycle and diagonal sky blue beam sweep",
+      "microinteraction_density": "high"
+    },
+    "brand_voice_in_ui": {
+      "tone": "authoritative tech enthusiast, knowledgeable, concise, and gamer-attuned",
+      "formality": "semi-formal technical",
+      "cta_style": "direct imperative (CHỌN, BỎ CHỌN, TIẾN HÀNH THANH TOÁN, XÂY DỰNG CẤU HÌNH)",
+      "empty_state_approach": "informative diagnostic message with fallback action button",
+      "error_tone": "precise and actionable (e.g. 'Công suất nguồn không đủ tải', 'Vui lòng chọn linh kiện')"
+    }
+  },
+  "visual_effects": {
+    "overview": {
+      "effect_intensity": "moderate",
+      "performance_tier": "lightweight",
+      "fallback_strategy": "graceful static boxy borders and solid colors on lower-end devices",
+      "primary_technology": "Flutter CustomPainter, AnimationController, LinearGradient shaders, and HapticFeedback"
+    },
+    "background_effects": {
+      "type": "mesh-gradient",
+      "description": "Clean fresh sky gradient with ambient soft blue glow in hero sections",
+      "technology": "LinearGradient / RadialGradient",
+      "params": {
+        "color_palette": [
+          "#F8FAFC",
+          "#E0F2FE",
+          "#F0F9FF"
+        ],
+        "speed": "static",
+        "density": "subtle",
+        "opacity": 0.98,
+        "blend_mode": "normal"
+      }
+    },
+    "particle_systems": {
+      "enabled": false,
+      "type": "none",
+      "description": "Particle systems disabled in primary catalog for maximum 120fps scrolling smoothness",
+      "technology": "none",
+      "params": {
+        "count": 0,
+        "shape": "circle",
+        "size_range": "1px-2px",
+        "movement_pattern": "none",
+        "color_behavior": "static",
+        "interaction": "none",
+        "spawn_area": "none"
+      }
+    },
+    "3d_elements": {
+      "enabled": false,
+      "type": "none",
+      "description": "3D canvas disabled in core app views; isolated 2D isometric renders used instead",
+      "technology": "none",
+      "params": {
+        "renderer": "canvas",
+        "lighting": "ambient",
+        "camera": "fixed",
+        "materials": "matte",
+        "geometry": "box",
+        "post_processing": [
+          "none"
+        ],
+        "interaction_model": "static"
+      }
+    },
+    "shader_effects": {
+      "enabled": true,
+      "type": "color-shift",
+      "description": "Sky shimmer gradient sweep and wattage bar live interpolation shaders",
+      "technology": "Flutter AnimationController + LinearGradient shader",
+      "params": {
+        "uniforms": [
+          "progress",
+          "cyanGleamOffset"
+        ],
+        "vertex_manipulation": "none",
+        "fragment_output": "gradient blend",
+        "noise_type": "none",
+        "distortion": "none"
+      }
+    },
+    "scroll_effects": {
+      "parallax": {
+        "enabled": false,
+        "layers": "1",
+        "depth_range": "0px",
+        "speed_curve": "linear"
+      },
+      "scroll_triggered_animations": {
+        "enabled": true,
+        "trigger_points": "on-viewport-enter",
+        "animation_type": "fade-up",
+        "scrub_behavior": "instant"
+      },
+      "scroll_morphing": {
+        "enabled": false,
+        "description": "Disabled for zero-latency product lists"
+      }
+    },
+    "text_effects": {
+      "type": "none",
+      "description": "High-clarity static rendering with strict letter-spacing and monospaced digits for prices",
+      "technology": "TextStyle",
+      "params": {
+        "split_strategy": "none",
+        "animation_per_unit": "none",
+        "stagger": "0ms",
+        "effect_style": "monospaced numerical tracking"
+      }
+    },
+    "cursor_effects": {
+      "enabled": false,
+      "type": "none",
+      "description": "Native mobile touch interface; web desktop uses system arrow with pointer hover highlights",
+      "params": {
+        "shape": "arrow",
+        "size": "16px",
+        "blend_mode": "normal",
+        "trail": false,
+        "interaction_zone": "clickable-elements"
+      }
+    },
+    "image_effects": {
+      "type": "none",
+      "description": "Fallback HUD box with CustomPainter corner brackets and cyber shimmer sweep",
+      "technology": "CustomPainter",
+      "params": {
+        "filter_pipeline": "none",
+        "hover_transform": "scale(1.02)",
+        "reveal_animation": "fade-in",
+        "distortion_type": "none"
+      }
+    },
+    "glassmorphism_neumorphism": {
+      "enabled": false,
+      "style": "none",
+      "params": {
+        "blur_radius": "0px",
+        "transparency": 1.0,
+        "border_treatment": "crisp solid 1px",
+        "shadow_type": "none",
+        "light_source_angle": 0
+      }
+    },
+    "canvas_drawings": {
+      "enabled": true,
+      "type": "interactive-blobs",
+      "description": "_CyberGridPainter drawing 90-degree corner brackets (10px) in sky blue at opposite diagonal corners",
+      "technology": "Flutter CustomPainter",
+      "params": {
+        "draw_method": "drawLine",
+        "animation_loop": "none",
+        "color_scheme": "AppColors.primaryBlue alpha 0.35",
+        "responsiveness": "responsive to container bounds",
+        "interaction": "none"
+      }
+    },
+    "svg_animations": {
+      "enabled": false,
+      "type": "none",
+      "description": "Vector icons rendered via Flutter IconData (MaterialIcons)",
+      "params": {
+        "animation_method": "none",
+        "path_morphing": false,
+        "stroke_animation": false,
+        "filter_effects": "none"
+      }
+    },
+    "composite_notes": "The Joppe UI achieves its high-tech identity through architectural discipline: 100% strict 90-degree geometry (BorderRadius.zero), fresh sky blue surfaces (#F8FAFC canvas, #FFFFFF cards, #F0F9FF active tint) contrasted with sharp 1px sky blue borders (#0EA5E9), deep slate typography (#0F172A) for effortless legibility, tactile mechanical button compression (80ms tactile press + haptic click), dynamic wattage safety meters, and clean sky shimmer loading effects."
+  }
+}

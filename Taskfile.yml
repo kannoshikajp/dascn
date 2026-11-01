@@ -1,0 +1,199 @@
+# https://taskfile.dev
+version: '3'
+
+vars:
+  MVNW: '{{if eq OS "windows"}}cmd /c ".\mvnw.cmd"{{else}}./mvnw{{end}}'
+  FLUTTER: 'flutter'
+  DEV_API_URL: 'http://localhost:8080'
+  PROD_API_URL: 'https://joppe.penguinlab.org'
+  DASHBOARD_DEV_PORT: 8888
+  APP_DEV_PORT: 3000
+
+tasks:
+  default:
+    desc: 'List all available tasks'
+    cmds:
+      - task --list
+    silent: true
+
+  # ========================================================
+  # Backend Lifecycle Tasks
+  # ========================================================
+  backend:build:
+    desc: 'Build backend executable JAR (skipping tests)'
+    dir: backend
+    cmds:
+      - '{{.MVNW}} clean package -DskipTests'
+    sources:
+      - 'src/**/*.java'
+      - 'src/main/resources/**/*'
+      - 'pom.xml'
+    generates:
+      - 'target/*.jar'
+
+  backend:build:full:
+    desc: 'Build backend executable JAR with full test suite'
+    dir: backend
+    cmds:
+      - '{{.MVNW}} clean package'
+
+  backend:dev:
+    desc: 'Run backend service in development mode with Spring Boot'
+    dir: backend
+    cmds:
+      - '{{.MVNW}} spring-boot:run'
+
+  backend:run:
+    desc: 'Run packaged backend JAR'
+    dir: backend
+    deps: [backend:build]
+    cmds:
+      - 'java -jar target/backend-0.0.1-SNAPSHOT.jar'
+
+  backend:test:
+    desc: 'Run backend JUnit 5 test suites'
+    dir: backend
+    cmds:
+      - '{{.MVNW}} test'
+
+  backend:clean:
+    desc: 'Clean backend target build artifacts'
+    dir: backend
+    cmds:
+      - '{{.MVNW}} clean'
+
+  # ========================================================
+  # Frontend Workspace Tasks
+  # ========================================================
+  frontend:deps:
+    desc: 'Resolve dependencies across entire Flutter workspace'
+    dir: frontend
+    cmds:
+      - '{{.FLUTTER}} pub get'
+
+  # ========================================================
+  # Joppe Dashboard (Operations Web App)
+  # ========================================================
+  dashboard:dev:
+    desc: 'Run Joppe Dashboard on Chrome in development mode (port 8888)'
+    dir: frontend/apps/joppe_dashboard
+    cmds:
+      - '{{.FLUTTER}} run -d chrome --web-port={{.DASHBOARD_DEV_PORT}} --dart-define=API_BASE_URL={{.DEV_API_URL}}'
+
+  dashboard:build:dev:
+    desc: 'Compile Joppe Dashboard Web release for Dev environment'
+    dir: frontend/apps/joppe_dashboard
+    cmds:
+      - '{{.FLUTTER}} build web --release --dart-define-from-file=env.dev.json --dart-define=API_BASE_URL={{.DEV_API_URL}}'
+
+  dashboard:build:prod:
+    desc: 'Compile Joppe Dashboard Web release for Production environment'
+    dir: frontend/apps/joppe_dashboard
+    cmds:
+      - '{{.FLUTTER}} build web --release --dart-define-from-file=env.prod.json --dart-define=API_BASE_URL={{.PROD_API_URL}}'
+
+  dashboard:build:
+    desc: 'Build Joppe Dashboard Web release (ENV=dev or ENV=prod, default: prod)'
+    vars:
+      TARGET_ENV: '{{.ENV | default "prod"}}'
+    cmds:
+      - task: 'dashboard:build:{{.TARGET_ENV}}'
+
+  dashboard:test:
+    desc: 'Run Joppe Dashboard widget & integration test suites'
+    dir: frontend/apps/joppe_dashboard
+    cmds:
+      - '{{.FLUTTER}} test'
+
+  # ========================================================
+  # Joppe App (Customer Storefront)
+  # ========================================================
+  app:dev:web:
+    desc: 'Run Joppe customer storefront on Chrome (port 3000)'
+    dir: frontend/apps/joppe_app
+    cmds:
+      - '{{.FLUTTER}} run -d chrome --web-port={{.APP_DEV_PORT}} --dart-define=API_BASE_URL={{.DEV_API_URL}}'
+
+  app:dev:windows:
+    desc: 'Run Joppe customer storefront on Windows Desktop'
+    dir: frontend/apps/joppe_app
+    cmds:
+      - '{{.FLUTTER}} run -d windows --dart-define=API_BASE_URL={{.DEV_API_URL}}'
+
+  app:dev:android:
+    desc: 'Run Joppe customer storefront on Android Emulator (10.0.2.2:8080)'
+    dir: frontend/apps/joppe_app
+    cmds:
+      - '{{.FLUTTER}} run --dart-define=API_BASE_URL=http://10.0.2.2:8080'
+
+  app:build:apk:dev:
+    desc: 'Build debug APK for Joppe App with split-per-abi'
+    dir: frontend/apps/joppe_app
+    cmds:
+      - '{{.FLUTTER}} build apk --debug --split-per-abi'
+
+  app:build:apk:release:
+    desc: 'Build release APK for Joppe App with split-per-abi'
+    dir: frontend/apps/joppe_app
+    cmds:
+      - '{{.FLUTTER}} build apk --release --split-per-abi'
+
+  app:test:
+    desc: 'Run Joppe customer app test suites'
+    dir: frontend/apps/joppe_app
+    cmds:
+      - '{{.FLUTTER}} test'
+
+  # ========================================================
+  # APK Batch Build Tasks
+  # ========================================================
+  apk:build:dev:
+    desc: 'Build debug APKs for both app and dashboard'
+    cmds:
+      - task: app:build:apk:dev
+      - cmd: '{{.FLUTTER}} build apk --debug --split-per-abi'
+        dir: frontend/apps/joppe_dashboard
+
+  apk:build:release:
+    desc: 'Build release APKs for both app and dashboard'
+    cmds:
+      - task: app:build:apk:release
+      - cmd: '{{.FLUTTER}} build apk --release --split-per-abi'
+        dir: frontend/apps/joppe_dashboard
+
+  # ========================================================
+  # Shared Packages Tasks
+  # ========================================================
+  design-system:test:
+    desc: 'Run Joppe Design System tests'
+    dir: frontend/packages/joppe_design_system
+    cmds:
+      - '{{.FLUTTER}} test'
+
+  # ========================================================
+  # Infrastructure & Orchestration Tasks
+  # ========================================================
+  mailhog:start:
+    desc: 'Start local MailHog SMTP & Web UI container'
+    cmds:
+      - 'docker run -d -p 1025:1025 -p 8025:8025 --name mailhog mailhog/mailhog'
+
+  mailhog:stop:
+    desc: 'Stop and remove local MailHog container'
+    cmds:
+      - 'docker stop mailhog'
+      - 'docker rm mailhog'
+
+  test:all:
+    desc: 'Run all test suites (Backend, Dashboard, App, Design System)'
+    cmds:
+      - task: backend:test
+      - task: design-system:test
+      - task: dashboard:test
+      - task: app:test
+
+  build:all:
+    desc: 'Build backend JAR and production Dashboard Web'
+    cmds:
+      - task: backend:build
+      - task: dashboard:build:prod

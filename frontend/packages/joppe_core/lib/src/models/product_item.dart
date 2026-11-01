@@ -4,14 +4,11 @@ import 'product_variant_summary.dart';
 class ProductItem {
   final String id;
   final String productName;
+  final String sku;
+  final String? parentSku;
   final String slug;
   final int? brandId;
   final String? brandName;
-  final String? shortDescription;
-  final String? description;
-  final String? specifications;
-  final int warrantyMonths;
-  final String? thumbnailUrl;
   final bool isActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -24,14 +21,11 @@ class ProductItem {
   const ProductItem({
     required this.id,
     required this.productName,
+    this.sku = '',
+    this.parentSku,
     required this.slug,
     this.brandId,
     this.brandName,
-    this.shortDescription,
-    this.description,
-    this.specifications,
-    this.warrantyMonths = 0,
-    this.thumbnailUrl,
     this.isActive = true,
     this.createdAt,
     this.updatedAt,
@@ -42,18 +36,41 @@ class ProductItem {
     this.totalStock = 0,
   });
 
+  String? get versionCode => sku;
+
+  /// Effective display price: prioritize minPrice if > 0, then maxPrice, then variant salePrice / listPrice
+  double get effectivePrice {
+    if (minPrice > 0) return minPrice;
+    if (maxPrice > 0) return maxPrice;
+    for (final v in variants) {
+      if (v.salePrice > 0) return v.salePrice;
+      if (v.listPrice > 0) return v.listPrice;
+    }
+    return 0.0;
+  }
+
+  /// Primary thumbnail resolved from default variant
+  String? get thumbnailUrl {
+    for (final v in variants) {
+      if (v.thumbnailUrl != null && v.thumbnailUrl!.isNotEmpty) {
+        return v.thumbnailUrl;
+      }
+    }
+    return null;
+  }
+
+  /// Primary description resolved from default variant
+  String? get description => variants.isNotEmpty ? variants.first.description : null;
+
   factory ProductItem.fromJson(Map<String, dynamic> json) {
     return ProductItem(
       id: json['id'] as String? ?? '',
       productName: json['productName'] as String? ?? '',
+      sku: json['sku'] as String? ?? (json['versionCode'] as String? ?? ''),
+      parentSku: json['parentSku'] as String?,
       slug: json['slug'] as String? ?? '',
       brandId: json['brandId'] as int?,
       brandName: json['brandName'] as String?,
-      shortDescription: json['shortDescription'] as String?,
-      description: json['description'] as String?,
-      specifications: json['specifications'] as String?,
-      warrantyMonths: (json['warrantyMonths'] as num?)?.toInt() ?? 0,
-      thumbnailUrl: json['thumbnailUrl'] as String?,
       isActive: json['isActive'] as bool? ?? true,
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
@@ -74,14 +91,11 @@ class ProductItem {
   Map<String, dynamic> toJson() => {
         'id': id,
         'productName': productName,
+        'sku': sku,
+        'parentSku': parentSku,
         'slug': slug,
         'brandId': brandId,
         'brandName': brandName,
-        'shortDescription': shortDescription,
-        'description': description,
-        'specifications': specifications,
-        'warrantyMonths': warrantyMonths,
-        'thumbnailUrl': thumbnailUrl,
         'isActive': isActive,
         'createdAt': createdAt?.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),

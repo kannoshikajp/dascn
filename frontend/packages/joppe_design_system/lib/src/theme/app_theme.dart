@@ -78,6 +78,10 @@ class JoppeTheme {
         backgroundColor: scheme.surface,
         indicatorColor: scheme.secondaryContainer,
       ),
+      navigationDrawerTheme: NavigationDrawerThemeData(
+        backgroundColor: scheme.surface,
+        indicatorColor: scheme.secondaryContainer,
+      ),
       dialogTheme: DialogThemeData(
         shape: JoppeShapes.shapeExtraLarge,
         backgroundColor: scheme.surfaceContainerHigh,
@@ -86,6 +90,13 @@ class JoppeTheme {
         color: scheme.outlineVariant,
         thickness: 1,
         space: 1,
+      ),
+      dataTableTheme: DataTableThemeData(
+        headingRowColor: WidgetStateProperty.all(
+          isDark
+              ? scheme.surfaceContainerHighest.withValues(alpha: 0.3)
+              : scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        ),
       ),
     );
   }

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Central Media Management API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Central Media Management API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/media</code> &bull; <strong>Static Asset URL:</strong> <code>/uploads/**</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.media.controller.MediaUploadController</code></p>
+    <p><strong>Security:</strong> Upload &amp; listing require authenticated session (<code>isAuthenticated()</code>)</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. Upload Media File</h2>
+      <p>Uploads a media image to the server disk and records metadata in the central <code>uploaded_media</code> table.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/media/upload</code></li>
+        <li><strong>Security:</strong> Authenticated (<code>isAuthenticated()</code>)</li>
+        <li><strong>Content-Type:</strong> <code>multipart/form-data</code></li>
+      </ul>
+
+      <h3>Form Parameters</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description &amp; Constraints</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>file</code></td>
+            <td>binary</td>
+            <td>Yes</td>
+            <td>Image file (JPEG, PNG, WebP, GIF, SVG). Maximum file size: 15MB.</td>
+          </tr>
+          <tr>
+            <td><code>folder</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Destination folder: <code>products</code>, <code>descriptions</code>, <code>categories</code>, <code>brands</code>, <code>avatars</code>, <code>general</code> (Default: <code>general</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Success Response (201 Created)</h3>
+      <pre><code>{
+  "id": "11111111-2222-3333-4444-555555555555",
+  "fileUrl": "/uploads/products/1729584000000_rtx4080.webp",
+  "fileName": "1729584000000_rtx4080.webp",
+  "fileSize": 182420,
+  "contentType": "image/webp",
+  "folder": "products",
+  "createdAt": "2026-10-22T08:00:00.000Z"
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. List Media Library</h2>
+      <p>Lists stored media files with optional folder filtering and keyword search for easy asset re-use.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/media</code></li>
+        <li><strong>Security:</strong> Authenticated (<code>isAuthenticated()</code>)</li>
+      </ul>
+
+      <h3>Query Parameters</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>folder</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Filter by folder name (<code>products</code>, <code>categories</code>, <code>brands</code>, <code>descriptions</code>, <code>avatars</code>, <code>general</code>)</td>
+          </tr>
+          <tr>
+            <td><code>search</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Keyword search matching original file name</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns an array of <code>UploadResponse</code> objects.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Public Asset Serving</h2>
+      <p>Static uploaded assets are served directly through Spring Boot web resource handler:</p>
+      <ul>
+        <li><strong>Path Pattern:</strong> <code>GET /uploads/**</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+      </ul>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

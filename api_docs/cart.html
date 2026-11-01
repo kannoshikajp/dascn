@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shopping Cart Management API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Shopping Cart Management API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/cart</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.domain.cart.CartController</code></p>
+    <p><strong>Security:</strong> Requires <code>CART_MANAGE</code> authority. User identity resolved from JWT subject.</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. Get Active Cart</h2>
+      <p>Retrieves the user's shopping cart, items, pricing, thumbnail, and subtotal amount.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/cart</code></li>
+        <li><strong>Security:</strong> Requires <code>CART_MANAGE</code></li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>{
+  "items": [
+    {
+      "id": "55555555-6666-7777-8888-999999999999",
+      "variantId": "22222222-3333-4444-5555-666666666666",
+      "productId": "11111111-2222-3333-4444-555555555555",
+      "productName": "ASUS ROG Strix RTX 4080 Super",
+      "variantName": "16GB OC Edition Black",
+      "sku": "ROG-STRIX-RTX4080S-O16G",
+      "thumbnailUrl": "/uploads/products/rtx4080_thumb.webp",
+      "unitPrice": 30990000.00,
+      "listPrice": 32990000.00,
+      "quantity": 1,
+      "stockAvailable": 15,
+      "itemTotal": 30990000.00
+    }
+  ],
+  "totalItems": 1,
+  "subtotalAmount": 30990000.00
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Add Item to Cart</h2>
+      <p>Atomically verifies available warehouse stock and increments line item quantity.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/cart/items</code></li>
+        <li><strong>Security:</strong> Requires <code>CART_MANAGE</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "variantId": "22222222-3333-4444-5555-666666666666",
+  "quantity": 1
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>CartResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Update Item Quantity</h2>
+      <p>Updates line item quantity. Passing <code>quantity = 0</code> automatically removes the item.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>PUT</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/cart/items/{itemId}</code></li>
+        <li><strong>Security:</strong> Requires <code>CART_MANAGE</code></li>
+        <li><strong>Path Variable:</strong> <code>itemId</code> (UUID)</li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "quantity": 2
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>CartResponse</code>.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. Remove Item from Cart &amp; Clear Cart</h2>
+      <ul>
+        <li><strong>Remove Single Item:</strong> <code>DELETE /api/v1/cart/items/{itemId}</code> &rarr; <code>200 OK</code> (Returns <code>CartResponse</code>)</li>
+        <li><strong>Clear Entire Cart:</strong> <code>DELETE /api/v1/cart</code> &rarr; <code>200 OK</code> (Returns empty <code>CartResponse</code>)</li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>5. Merge Guest Cart on Login</h2>
+      <p>Merges client-side anonymous shopping items into the authenticated customer's backend cart.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/cart/merge</code></li>
+        <li><strong>Security:</strong> Requires <code>CART_MANAGE</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "items": [
+    {
+      "variantId": "22222222-3333-4444-5555-666666666666",
+      "quantity": 1
+    }
+  ]
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns merged <code>CartResponse</code>.</p>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

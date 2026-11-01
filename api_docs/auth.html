@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Authentication &amp; User Profile API - Joppe API Docs</title>
+</head>
+<body>
+
+  <nav>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+  </nav>
+
+  <hr>
+
+  <header>
+    <h1>Authentication &amp; User Profile API</h1>
+    <p><strong>Base Path:</strong> <code>/api/v1/auth</code></p>
+    <p><strong>Controller:</strong> <code>joppe.backend.auth.controller.AuthController</code></p>
+    <p><strong>Token Format:</strong> Nimbus JOSE JWT with <code>HmacSHA256</code> in <code>Authorization: Bearer &lt;token&gt;</code> header</p>
+  </header>
+
+  <hr>
+
+  <main>
+    <section>
+      <h2>1. Register Customer Account</h2>
+      <p>Registers a new retail customer account, stores credentials securely, and automatically issues an active JWT session.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/auth/register</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+        <li><strong>Headers:</strong> <code>Content-Type: application/json</code>, <code>Accept: application/json</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "email": "customer@example.com",
+  "password": "Password123!",
+  "fullName": "Nguyen Van A",
+  "phoneNumber": "0901234567"
+}</code></pre>
+
+      <h3>Field Validation Rules</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Constraints &amp; Rules</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>email</code></td>
+            <td>string</td>
+            <td>Yes</td>
+            <td>Not blank, valid email format, max 100 characters, unique in database</td>
+          </tr>
+          <tr>
+            <td><code>password</code></td>
+            <td>string</td>
+            <td>Yes</td>
+            <td>Not blank, minimum 6 characters</td>
+          </tr>
+          <tr>
+            <td><code>fullName</code></td>
+            <td>string</td>
+            <td>Yes</td>
+            <td>Not blank, max 150 characters</td>
+          </tr>
+          <tr>
+            <td><code>phoneNumber</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Max 20 characters</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Success Response (201 Created)</h3>
+      <pre><code>{
+  "tokenType": "Bearer",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresInSeconds": 86400,
+  "userId": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "email": "customer@example.com",
+  "fullName": "Nguyen Van A",
+  "role": "ROLE_CUSTOMER",
+  "permissions": [
+    "AUTH_ME",
+    "AUTH_CHANGE_PASSWORD",
+    "USER_READ_SELF",
+    "ADDRESS_MANAGE",
+    "CATALOG_READ",
+    "CART_MANAGE",
+    "PROMOTION_READ",
+    "ORDER_CREATE",
+    "ORDER_READ_OWN",
+    "PAYMENT_PROCESS",
+    "RETURN_REQUEST",
+    "REVIEW_CREATE",
+    "PC_BUILD_MANAGE",
+    "REVIEW_READ",
+    "PC_BUILD_SIMULATE",
+    "ORDER_TRACK_GUEST"
+  ]
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>2. Login User</h2>
+      <p>Authenticates an existing account (Admin, Staff, or Customer) with email and password credentials.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/auth/login</code></li>
+        <li><strong>Security:</strong> Public (<code>permitAll</code>)</li>
+        <li><strong>Headers:</strong> <code>Content-Type: application/json</code>, <code>Accept: application/json</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "email": "admin@joppe.vn",
+  "password": "Admin@123456"
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns standard <code>AuthResponse</code> containing access token, user metadata, role, and permission array:</p>
+      <pre><code>{
+  "tokenType": "Bearer",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresInSeconds": 86400,
+  "userId": "a50c82f8-0f0e-436b-a253-12502690d796",
+  "email": "admin@joppe.vn",
+  "fullName": "System Administrator",
+  "role": "ROLE_ADMIN",
+  "permissions": [
+    "AUTH_ME",
+    "AUTH_CHANGE_PASSWORD",
+    "USER_MANAGE",
+    "ROLE_MANAGE",
+    "CATALOG_READ",
+    "CATALOG_WRITE",
+    "INVENTORY_READ",
+    "INVENTORY_WRITE",
+    "ORDER_MANAGE"
+  ]
+}</code></pre>
+
+      <h3>Error Responses</h3>
+      <ul>
+        <li><strong>401 Unauthorized:</strong> Bad credentials (incorrect email or password).</li>
+        <li><strong>403 Forbidden:</strong> Account suspended or deactivated (<code>isActive = false</code>).</li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>3. Get Current User Profile</h2>
+      <p>Retrieves personal account information, avatar URL, active role, and granted permissions for the authenticated caller.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>GET</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/auth/me</code></li>
+        <li><strong>Security:</strong> Requires <code>AUTH_ME</code> authority</li>
+        <li><strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code>, <code>Accept: application/json</code></li>
+      </ul>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>{
+  "id": "a50c82f8-0f0e-436b-a253-12502690d796",
+  "email": "admin@joppe.vn",
+  "fullName": "System Administrator",
+  "phoneNumber": "0987654321",
+  "avatarUrl": "/uploads/avatars/admin.webp",
+  "role": "ROLE_ADMIN",
+  "permissions": [
+    "AUTH_ME",
+    "AUTH_CHANGE_PASSWORD",
+    "USER_MANAGE",
+    "ROLE_MANAGE",
+    "CATALOG_READ",
+    "CATALOG_WRITE"
+  ],
+  "isActive": true,
+  "createdAt": "2026-10-22T00:00:00.000Z"
+}</code></pre>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>4. Update Current User Profile</h2>
+      <p>Modifies profile name, contact phone number, and avatar image link for the authenticated caller.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>PUT</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/auth/profile</code></li>
+        <li><strong>Security:</strong> Requires <code>AUTH_ME</code> authority</li>
+        <li><strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code>, <code>Content-Type: application/json</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "fullName": "Nguyen Van B",
+  "phoneNumber": "0912345678",
+  "avatarUrl": "/uploads/avatars/avatar_updated.webp"
+}</code></pre>
+
+      <h3>Field Validation Rules</h3>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Constraints</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>fullName</code></td>
+            <td>string</td>
+            <td>Yes</td>
+            <td>Not blank, max 150 characters</td>
+          </tr>
+          <tr>
+            <td><code>phoneNumber</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Max 20 characters</td>
+          </tr>
+          <tr>
+            <td><code>avatarUrl</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>Max 1000 characters</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Success Response (200 OK)</h3>
+      <p>Returns updated <code>UserProfileResponse</code> object.</p>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>5. Change Password</h2>
+      <p>Updates account password after verifying current credentials.</p>
+
+      <ul>
+        <li><strong>Method:</strong> <code>POST</code></li>
+        <li><strong>Path:</strong> <code>/api/v1/auth/change-password</code></li>
+        <li><strong>Security:</strong> Requires <code>AUTH_CHANGE_PASSWORD</code> authority</li>
+        <li><strong>Headers:</strong> <code>Authorization: Bearer &lt;token&gt;</code>, <code>Content-Type: application/json</code></li>
+      </ul>
+
+      <h3>Request Body</h3>
+      <pre><code>{
+  "currentPassword": "OldPassword123!",
+  "newPassword": "NewPassword456!"
+}</code></pre>
+
+      <h3>Success Response (200 OK)</h3>
+      <pre><code>{
+  "success": true,
+  "message": "Password changed successfully"
+}</code></pre>
+    </section>
+  </main>
+
+  <hr>
+
+  <footer>
+    <p><a href="index.html">&larr; Back to API Index</a></p>
+    <p><small>Joppe Tech Store API Specification &bull; Spring Boot 4.1.1 (Java 21)</small></p>
+  </footer>
+
+</body>
+</html>

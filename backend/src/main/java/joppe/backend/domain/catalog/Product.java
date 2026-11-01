@@ -15,8 +15,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "products")
@@ -41,25 +39,14 @@ public class Product {
     @Column(name = "product_name", nullable = false, length = 255)
     private String productName;
 
+    @Column(name = "sku", nullable = false, unique = true, length = 100)
+    private String sku;
+
+    @Column(name = "parent_sku", length = 100)
+    private String parentSku;
+
     @Column(name = "slug", nullable = false, unique = true, length = 255)
     private String slug;
-
-    @Column(name = "short_description", columnDefinition = "TEXT")
-    private String shortDescription;
-
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "specifications", columnDefinition = "jsonb")
-    private String specifications;
-
-    @Column(name = "warranty_months", nullable = false)
-    @Builder.Default
-    private Integer warrantyMonths = 0;
-
-    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
-    private String thumbnailUrl;
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
@@ -82,9 +69,6 @@ public class Product {
         }
         if (isActive == null) {
             isActive = true;
-        }
-        if (warrantyMonths == null) {
-            warrantyMonths = 0;
         }
     }
 

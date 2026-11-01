@@ -11,6 +11,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByPhoneNumber(String phoneNumber);
+
     boolean existsByEmail(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
@@ -31,4 +33,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying
     @Query("UPDATE User u SET u.passwordHash = :newHash WHERE u.id = :id")
     int updatePasswordHash(@Param("id") UUID id, @Param("newHash") String newHash);
+
+    long countByIsActiveTrue();
+
+    long countByRoleIdAndIsActiveTrue(Integer roleId);
 }
