@@ -27,6 +27,21 @@ class VnPayService {
     return VnPayPaymentModel.fromJson(res as Map<String, dynamic>);
   }
 
+  /// Checks real-time payment status from backend for live polling
+  Future<Map<String, dynamic>> checkPaymentStatus({
+    String? orderCode,
+    String? txnRef,
+    String? orderId,
+  }) async {
+    final query = <String, String>{
+      if (orderCode != null && orderCode.isNotEmpty) 'orderCode': orderCode,
+      if (txnRef != null && txnRef.isNotEmpty) 'txnRef': txnRef,
+      if (orderId != null && orderId.isNotEmpty) 'orderId': orderId,
+    };
+    final res = await apiClient.get('/api/v1/payment/vnpay/status', query);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
   /// Generates a fully signed VNPay portal URL compliant with VNPay v2.1.0 specifications.
   /// Includes vnp_CreateDate, vnp_IpAddr, sorted query parameters, and HMAC-SHA512 checksum.
   String buildFallbackPaymentUrl({

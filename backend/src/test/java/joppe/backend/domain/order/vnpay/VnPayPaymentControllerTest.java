@@ -32,11 +32,17 @@ class VnPayPaymentControllerTest {
     @Mock
     private VnPayService vnPayService;
 
+    @Mock
+    private joppe.backend.domain.order.OrderRepository orderRepository;
+
+    @Mock
+    private joppe.backend.domain.order.PaymentRepository paymentRepository;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new VnPayPaymentController(vnPayService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new VnPayPaymentController(vnPayService, orderRepository, paymentRepository))
                 .build();
     }
 
@@ -110,6 +116,23 @@ class VnPayPaymentControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.orderCode").value("ORD-20261030-001"))
                 .andExpect(jsonPath("$.message").value("Giao dịch thành công"));
+    }
+
+    @Test
+    void getPaymentStatus_paidOrder_returnsIsPaidTrue() throws Exception {
+        joppe.backend.domain.order.Order order = joppe.backend.domain.order.Order.builder()
+                .id(UUID.randomUUID())
+                .orderCode("ORD-20261102-001")
+                .paymentStatus("PAID")
+                .build();
+
+        when(orderRepository.findByOrderCode("ORD-20261102-001")).thenReturn(java.util.Optional.of(order));
+
+        mockMvc.perform(get("/api/v1/payment/vnpay/status")
+                        .param("orderCode", "ORD-20261102-001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isPaid").value(true))
+                .andExpect(jsonPath("$.paymentStatus").value("PAID"));
     }
 
     @Test

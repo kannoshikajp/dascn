@@ -5,6 +5,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.Map;
+import java.util.UUID;
+import joppe.backend.domain.order.Order;
+import joppe.backend.domain.order.OrderRepository;
+import joppe.backend.domain.order.Payment;
+import joppe.backend.domain.order.PaymentRepository;
 import joppe.backend.domain.order.vnpay.dto.CreateVnPayPaymentRequest;
 import joppe.backend.domain.order.vnpay.dto.VnPayIpnResponse;
 import joppe.backend.domain.order.vnpay.dto.VnPayPaymentResponse;
@@ -29,9 +34,46 @@ import org.springframework.web.bind.annotation.RestController;
 public class VnPayPaymentController {
 
     private final VnPayService vnPayService;
+    private final OrderRepository orderRepository;
+    private final PaymentRepository paymentRepository;
 
     @Value("${app.frontend-url:https://joppe-dash.vercel.app}")
     private String frontendUrl = "https://joppe-dash.vercel.app";
+
+    @GetMapping("/status")
+    @Operation(summary = "Check payment status of an order for frontend live polling without authentication")
+    public ResponseEntity<Map<String, Object>> getPaymentStatus(
+            @RequestParam(required = false) String orderCode,
+            @RequestParam(required = false) String txnRef,
+            @RequestParam(required = false) UUID orderId) {
+        Order order = null;
+        if (orderId != null) {
+            order = orderRepository.findById(orderId).orElse(null);
+        }
+        if (order == null && orderCode != null && !orderCode.isBlank()) {
+            order = orderRepository.findByOrderCode(orderCode.trim()).orElse(null);
+        }
+        if (order == null && txnRef != null && !txnRef.isBlank()) {
+            Payment payment = paymentRepository.findByTransactionCode(txnRef.trim()).orElse(null);
+            if (payment != null) {
+                order = orderRepository.findById(payment.getOrderId()).orElse(null);
+            }
+        }
+        if (order == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "error", "Order not found",
+                    "isPaid", false,
+                    "paymentStatus", "NOT_FOUND"
+            ));
+        }
+        boolean isPaid = "PAID".equalsIgnoreCase(order.getPaymentStatus());
+        return ResponseEntity.ok(Map.of(
+                "orderId", order.getId(),
+                "orderCode", order.getOrderCode(),
+                "paymentStatus", order.getPaymentStatus(),
+                "isPaid", isPaid
+        ));
+    }
 
     @PostMapping("/create")
     @PreAuthorize("hasAnyAuthority('PAYMENT_PROCESS', 'ORDER_CREATE', 'ROLE_CUSTOMER', 'ROLE_ADMIN', 'ROLE_STAFF')")

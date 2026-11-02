@@ -27,9 +27,15 @@ class CheckoutCallbackControllerTest {
     @Mock
     private VnPayService vnPayService;
 
+    @Mock
+    private joppe.backend.domain.order.OrderRepository orderRepository;
+
+    @Mock
+    private joppe.backend.domain.order.PaymentRepository paymentRepository;
+
     @BeforeEach
     void setUp() {
-        VnPayPaymentController paymentController = new VnPayPaymentController(vnPayService);
+        VnPayPaymentController paymentController = new VnPayPaymentController(vnPayService, orderRepository, paymentRepository);
         CheckoutCallbackController callbackController = new CheckoutCallbackController(paymentController);
         mockMvc = MockMvcBuilders.standaloneSetup(callbackController).build();
     }
