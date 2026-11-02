@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import '../api/api_client.dart';
 import '../models/vnpay_payment_model.dart';
 
@@ -5,6 +7,8 @@ class VnPayService {
   final ApiClient apiClient;
 
   static const String defaultSandboxPayUrl = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
+  static const String defaultSandboxTmnCode = 'H04KMMWQ';
+  static const String defaultSandboxHashSecret = 'QSRCXQVXSJPTZJDSAPEKSGMMUEPBOGSA';
 
   const VnPayService(this.apiClient);
 
@@ -23,32 +27,67 @@ class VnPayService {
     return VnPayPaymentModel.fromJson(res as Map<String, dynamic>);
   }
 
-  /// Generates a valid VNPay sandbox portal URL with standard query parameters.
-  /// Never points to an internal API or order detail URL.
+  /// Generates a fully signed VNPay portal URL compliant with VNPay v2.1.0 specifications.
+  /// Includes vnp_CreateDate, vnp_IpAddr, sorted query parameters, and HMAC-SHA512 checksum.
   String buildFallbackPaymentUrl({
     required String orderCode,
     required double amount,
     String? txnRef,
+    String? bankCode,
+    String tmnCode = defaultSandboxTmnCode,
+    String hashSecret = defaultSandboxHashSecret,
+    String? ipAddr,
   }) {
     final ref = txnRef ?? '${orderCode}_${DateTime.now().millisecondsSinceEpoch % 1000000}';
     final amountInCents = (amount * 100).round();
-    final query = <String, String>{
-      'vnp_Command': 'pay',
+    final createDate = _formatVnPayDate(DateTime.now());
+    final cleanOrderCode = orderCode.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+
+    final params = <String, String>{
       'vnp_Version': '2.1.0',
-      'vnp_TmnCode': 'H04KMMWQ',
+      'vnp_Command': 'pay',
+      'vnp_TmnCode': tmnCode,
       'vnp_Amount': amountInCents.toString(),
       'vnp_CurrCode': 'VND',
       'vnp_TxnRef': ref,
-      'vnp_OrderInfo': 'Thanh_toan_don_hang_$orderCode',
+      'vnp_OrderInfo': 'Thanh_toan_don_hang_$cleanOrderCode',
       'vnp_OrderType': 'other',
       'vnp_Locale': 'vn',
       'vnp_ReturnUrl': '${apiClient.baseUrl}/api/v1/payment/vnpay/return',
+      'vnp_IpAddr': ipAddr ?? '127.0.0.1',
+      'vnp_CreateDate': createDate,
+      if (bankCode != null && bankCode.trim().isNotEmpty) 'vnp_BankCode': bankCode.trim(),
     };
-    return Uri.parse(defaultSandboxPayUrl).replace(queryParameters: query).toString();
+
+    // Sort parameters alphabetically by key as required by VNPay gateway
+    final sortedKeys = params.keys.toList()..sort();
+
+    final hashData = sortedKeys
+        .map((k) => '$k=${Uri.encodeQueryComponent(params[k]!)}')
+        .join('&');
+
+    final query = sortedKeys
+        .map((k) => '${Uri.encodeQueryComponent(k)}=${Uri.encodeQueryComponent(params[k]!)}')
+        .join('&');
+
+    final hmac = Hmac(sha512, utf8.encode(hashSecret));
+    final secureHash = hmac.convert(utf8.encode(hashData)).toString();
+
+    return '$defaultSandboxPayUrl?$query&vnp_SecureHash=$secureHash';
+  }
+
+  static String _formatVnPayDate(DateTime dt) {
+    final y = dt.year.toString().padLeft(4, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    final h = dt.hour.toString().padLeft(2, '0');
+    final min = dt.minute.toString().padLeft(2, '0');
+    final s = dt.second.toString().padLeft(2, '0');
+    return '$y$m$d$h$min$s';
   }
 
   /// Attempts to create payment URL through backend API, falling back to
-  /// direct sandbox URL if server is unavailable or order was placed offline.
+  /// a fully signed sandbox URL if server is unavailable or order was placed offline.
   Future<VnPayPaymentModel> createPaymentUrlOrFallback({
     required String orderId,
     required String orderCode,
@@ -66,6 +105,7 @@ class VnPayService {
       final fallbackUrl = buildFallbackPaymentUrl(
         orderCode: orderCode,
         amount: amount,
+        bankCode: bankCode,
       );
       final qrUrl = buildQrUrl(paymentUrl: fallbackUrl);
       return VnPayPaymentModel(

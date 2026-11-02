@@ -343,7 +343,7 @@ void main() {
         subtotal: 15000000,
         shippingFee: 0,
         grandTotal: 15000000,
-        vnpayPaymentUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=1500000000',
+        vnpayPaymentUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=1500000000&vnp_SecureHash=mockhash123',
         vnpayTxnRef: 'JP-2026-VNPAY_123456',
       );
 

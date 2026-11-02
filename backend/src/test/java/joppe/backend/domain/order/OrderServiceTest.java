@@ -164,6 +164,55 @@ class OrderServiceTest {
     }
 
     @Test
+    void checkout_vnpayPayment_initializesUnpaid() {
+        UUID userId = UUID.randomUUID();
+        UUID variantId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        CheckoutRequest request = new CheckoutRequest(
+                "Recipient",
+                "0987654321",
+                "123 Delivery Way",
+                "Leave at door",
+                BigDecimal.valueOf(30),
+                List.of(new CheckoutItemInput(variantId, 1)),
+                "VNPAY",
+                null
+        );
+
+        ProductVariant variant = ProductVariant.builder()
+                .id(variantId)
+                .productId(productId)
+                .sku("SKU-99")
+                .variantName("V99")
+                .salePrice(BigDecimal.valueOf(100))
+                .quantityOnHand(5)
+                .quantityReserved(0)
+                .isActive(true)
+                .build();
+
+        Product product = Product.builder()
+                .id(productId)
+                .productName("Gaming Rig")
+                .slug("gaming-rig")
+                .build();
+
+        when(productVariantRepository.findAllById(any())).thenReturn(List.of(variant));
+        when(productRepository.findAllById(any())).thenReturn(List.of(product));
+        when(orderRepository.existsByOrderCode(any())).thenReturn(false);
+        when(productVariantService.reserveStock(variantId, 1)).thenReturn(true);
+
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(orderItemRepository.save(any(OrderItem.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        OrderResponse res = orderService.checkout(userId, request);
+
+        assertNotNull(res);
+        assertEquals("ACCEPTED", res.orderStatus());
+        assertEquals("UNPAID", res.paymentStatus());
+    }
+
+    @Test
     void cancelOrder_accepted_releasesStockAndRefunds() {
         UUID userId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();

@@ -16,6 +16,8 @@ class OrderService {
     String? customerNote,
     double? shippingFee,
     List<Map<String, dynamic>>? items,
+    String? paymentMethod,
+    String? paymentStatus,
   }) async {
     final response = await _client.post(ApiConstants.ordersCheckout, {
       'recipientName': recipientName,
@@ -24,6 +26,8 @@ class OrderService {
       if (customerNote != null) 'customerNote': customerNote,
       if (shippingFee != null) 'shippingFee': shippingFee,
       if (items != null) 'items': items,
+      if (paymentMethod != null) 'paymentMethod': paymentMethod,
+      if (paymentStatus != null) 'paymentStatus': paymentStatus,
     });
     return OrderDetailModel.fromJson(response as Map<String, dynamic>);
   }

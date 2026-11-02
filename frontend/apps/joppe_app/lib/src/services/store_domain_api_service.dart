@@ -126,6 +126,8 @@ class StoreDomainApiService {
     String? customerNote,
     double shippingFee = 0.0,
     List<Map<String, dynamic>>? items,
+    String? paymentMethod,
+    String? paymentStatus,
   }) async {
     return _wrap(() async {
       final res = await _orderService.checkout(
@@ -135,6 +137,8 @@ class StoreDomainApiService {
         customerNote: customerNote,
         shippingFee: shippingFee,
         items: items,
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentStatus,
       );
       return res.toJson();
     });

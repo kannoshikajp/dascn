@@ -93,13 +93,23 @@ public class OrderService {
         BigDecimal discountAmount = BigDecimal.ZERO;
 
         OffsetDateTime now = OffsetDateTime.now();
+        boolean isOnlinePayment = request.paymentMethod() != null &&
+                ("VNPAY".equalsIgnoreCase(request.paymentMethod()) ||
+                 "VIETQR".equalsIgnoreCase(request.paymentMethod()));
+
+        String initialPaymentStatus = request.paymentStatus() != null
+                ? request.paymentStatus()
+                : (isOnlinePayment ? "UNPAID" : "PAID");
+
+        OffsetDateTime paidAt = "PAID".equalsIgnoreCase(initialPaymentStatus) ? now : null;
+
         Order order = Order.builder()
                 .orderCode(orderCode)
                 .userId(userId)
                 .orderChannel("ONLINE")
                 .orderStatus("ACCEPTED")
-                .paymentStatus("PAID")
-                .paidAt(now)
+                .paymentStatus(initialPaymentStatus)
+                .paidAt(paidAt)
                 .recipientName(request.recipientName().trim())
                 .recipientPhone(request.recipientPhone().trim())
                 .shippingAddress(request.shippingAddress().trim())

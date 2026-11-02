@@ -22,6 +22,20 @@ public record CheckoutRequest(
 
         BigDecimal shippingFee,
 
-        List<@Valid CheckoutItemInput> items
+        List<@Valid CheckoutItemInput> items,
+
+        String paymentMethod,
+
+        String paymentStatus
 ) {
+    public CheckoutRequest(
+            String recipientName,
+            String recipientPhone,
+            String shippingAddress,
+            String customerNote,
+            BigDecimal shippingFee,
+            List<CheckoutItemInput> items
+    ) {
+        this(recipientName, recipientPhone, shippingAddress, customerNote, shippingFee, items, null, null);
+    }
 }

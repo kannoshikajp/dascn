@@ -284,6 +284,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               })
           .toList();
 
+      final methodStr = _selectedPaymentMethod == PaymentMethodType.vnpay
+          ? 'VNPAY'
+          : (_selectedPaymentMethod == PaymentMethodType.vietQr ? 'VIETQR' : 'COD');
+
       final apiResponse = await StoreDomainApiService().checkoutOrder(
         recipientName: _nameController.text.trim(),
         recipientPhone: _phoneController.text.trim(),
@@ -291,6 +295,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         customerNote: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         shippingFee: _shippingFee,
         items: itemsPayload,
+        paymentMethod: methodStr,
+        paymentStatus: _selectedPaymentMethod == PaymentMethodType.vnpay ? 'UNPAID' : null,
       );
 
       if (apiResponse.isSuccess && apiResponse.data is Map) {

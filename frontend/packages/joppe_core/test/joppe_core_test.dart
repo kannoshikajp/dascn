@@ -165,4 +165,54 @@ void main() {
     expect(json['sku'], 'SKU-ROG-32GB');
     expect(json['attributes'], '{"RAM": "32GB", "GPU": "RTX 4070"}');
   });
+
+  group('VnPayService and VnPayPaymentModel Tests', () {
+    test('VnPayPaymentModel safely decodes Base64 data URI in qrBytes', () {
+      final model = VnPayPaymentModel(
+        paymentId: 'pay-123',
+        paymentUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+        orderCode: 'ORD-999',
+        txnRef: 'ORD-999_123',
+        amount: 5000000,
+        qrCodeBase64: 'data:image/png;base64,SGVsbG8gV09STEI=',
+      );
+
+      expect(model.qrBytes, isNotNull);
+      expect(model.qrBytes!.length, greaterThan(0));
+    });
+
+    test('buildFallbackPaymentUrl includes all required VNPay params and HMAC-SHA512 hash', () {
+      final client = ApiClient(baseUrl: 'https://joppe.penguinlab.org');
+      final vnPay = VnPayService(client);
+
+      final url = vnPay.buildFallbackPaymentUrl(
+        orderCode: 'JP-2026-TEST',
+        amount: 1500000,
+        txnRef: 'JP-2026-TEST_999999',
+        bankCode: 'NCB',
+      );
+
+      final uri = Uri.parse(url);
+      expect(uri.scheme, 'https');
+      expect(uri.host, 'sandbox.vnpayment.vn');
+      expect(uri.path, '/paymentv2/vpcpay.html');
+
+      final q = uri.queryParameters;
+      expect(q['vnp_Version'], '2.1.0');
+      expect(q['vnp_Command'], 'pay');
+      expect(q['vnp_TmnCode'], 'H04KMMWQ');
+      expect(q['vnp_Amount'], '150000000'); // 1,500,000 * 100
+      expect(q['vnp_CurrCode'], 'VND');
+      expect(q['vnp_TxnRef'], 'JP-2026-TEST_999999');
+      expect(q['vnp_OrderInfo'], contains('JP-2026-TEST'));
+      expect(q['vnp_Locale'], 'vn');
+      expect(q['vnp_ReturnUrl'], 'https://joppe.penguinlab.org/api/v1/payment/vnpay/return');
+      expect(q['vnp_IpAddr'], '127.0.0.1');
+      expect(q['vnp_BankCode'], 'NCB');
+      expect(q['vnp_CreateDate'], isNotNull);
+      expect(q['vnp_CreateDate']!.length, 14); // yyyyMMddHHmmss
+      expect(q['vnp_SecureHash'], isNotNull);
+      expect(q['vnp_SecureHash']!.length, 128); // 512-bit hex string
+    });
+  });
 }

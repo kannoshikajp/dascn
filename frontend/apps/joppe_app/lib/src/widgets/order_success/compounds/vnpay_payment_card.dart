@@ -19,7 +19,11 @@ class VnPayPaymentCard extends StatelessWidget {
     final vnPayService = core.VnPayService(AppApiClient.instance);
 
     // Xác định URL cổng thanh toán VNPAY hợp lệ (luôn trỏ về cổng vnpay, tuyệt đối không dùng api/orders)
-    final String paymentUrl = (order.vnpayPaymentUrl != null && order.vnpayPaymentUrl!.trim().isNotEmpty)
+    final bool hasValidSignature = order.vnpayPaymentUrl != null &&
+        order.vnpayPaymentUrl!.trim().isNotEmpty &&
+        order.vnpayPaymentUrl!.contains('vnp_SecureHash=');
+
+    final String paymentUrl = hasValidSignature
         ? order.vnpayPaymentUrl!.trim()
         : vnPayService.buildFallbackPaymentUrl(
             orderCode: order.orderId,
