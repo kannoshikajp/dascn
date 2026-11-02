@@ -313,7 +313,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               orderId: realOrderId,
               orderCode: orderId,
               amount: _grandTotal,
-              returnUrl: 'https://joppe.penguinlab.org/checkout/callback',
+              returnUrl: '${AppApiClient.instance.baseUrl}/checkout/callback',
             );
             if (vnpayRes.isSuccess && vnpayRes.data is Map) {
               final vnpayData = VnPayPaymentResponse.fromJson(Map<String, dynamic>.from(vnpayRes.data));
@@ -339,7 +339,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           orderId: orderId,
           orderCode: orderId,
           amount: _grandTotal,
-          returnUrl: 'https://joppe.penguinlab.org/checkout/callback',
+          returnUrl: '${AppApiClient.instance.baseUrl}/checkout/callback',
         );
         if (vnpayRes.isSuccess && vnpayRes.data is Map) {
           final vnpayData = VnPayPaymentResponse.fromJson(Map<String, dynamic>.from(vnpayRes.data));

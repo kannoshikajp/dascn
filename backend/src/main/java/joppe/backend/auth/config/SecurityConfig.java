@@ -173,9 +173,13 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/uploads/**",
+                                "/checkout/callback",
+                                "/checkout/**",
+                                "/api/v1/checkout/**",
                                 "/api/v1/payment/vnpay/ipn",
                                 "/api/v1/payment/vnpay/return",
                                 "/api/v1/payment/vnpay/qr",
+                                "/api/v1/payment/**",
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
