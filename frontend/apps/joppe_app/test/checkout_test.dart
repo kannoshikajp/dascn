@@ -329,6 +329,38 @@ void main() {
       expect(find.text('SAO CHÉP MÃ ĐƠN'), findsOneWidget);
       expect(find.text('TIẾP TỤC MUA SẮM'), findsOneWidget);
     });
+
+    testWidgets('Renders VNPay payment card with gateway portal URL and official badge', (WidgetTester tester) async {
+      final order = Order(
+        orderId: 'JP-2026-VNPAY',
+        items: [CartItem(product: sampleProduct1, quantity: 1)],
+        customerName: 'Nguyễn Văn B',
+        phoneNumber: '0987654321',
+        email: 'vnpay@joppe.vn',
+        shippingAddress: 'Showroom Joppe',
+        shippingMethod: ShippingMethod.storePickup,
+        paymentMethod: PaymentMethodType.vnpay,
+        subtotal: 15000000,
+        shippingFee: 0,
+        grandTotal: 15000000,
+        vnpayPaymentUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=1500000000',
+        vnpayTxnRef: 'JP-2026-VNPAY_123456',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OrderSuccessScreen(order: order),
+        ),
+      );
+
+      expect(find.text('THANH TOÁN QUA CỔNG VNPAY & MÃ VNPAY-QR'), findsOneWidget);
+      expect(find.text('CHÍNH THỨC'), findsOneWidget);
+      expect(find.text('MỞ CỔNG THANH TOÁN VNPAY'), findsOneWidget);
+      expect(find.text('Sao chép liên kết thanh toán'), findsOneWidget);
+      expect(find.text('JP-2026-VNPAY_123456'), findsOneWidget);
+      // Ensures the buggy URL is NEVER shown
+      expect(find.text('https://joppe.penguinlab.org/orders/JP-2026-VNPAY'), findsNothing);
+    });
   });
 
   group('CartScreen Integration Tests', () {

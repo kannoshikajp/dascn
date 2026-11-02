@@ -169,10 +169,14 @@ class StoreDomainApiService {
     required String orderId,
     String? bankCode,
     String? returnUrl,
+    String? orderCode,
+    double? amount,
   }) async {
     return _wrap(() async {
-      final res = await core.VnPayService(_client).createPaymentUrl(
+      final res = await core.VnPayService(_client).createPaymentUrlOrFallback(
         orderId: orderId,
+        orderCode: orderCode ?? orderId,
+        amount: amount ?? 0.0,
         bankCode: bankCode,
         returnUrl: returnUrl,
       );

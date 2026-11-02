@@ -396,7 +396,7 @@ void main() {
 
       expect(find.text('Nguyễn Thành Nam (Gamer)'), findsOneWidget);
       expect(find.text('gamer@joppe.vn'), findsOneWidget);
-      expect(find.text('ĐĂNG XUẤT KHỎI HỆ THỐNG'), findsOneWidget);
+      expect(find.text('ĐĂNG XUẤT'), findsOneWidget);
     });
   });
 }

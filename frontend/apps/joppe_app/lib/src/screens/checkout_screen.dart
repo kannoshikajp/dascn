@@ -305,6 +305,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           try {
             final vnpayRes = await StoreDomainApiService().createVnPayPayment(
               orderId: realOrderId,
+              orderCode: orderId,
+              amount: _grandTotal,
               returnUrl: 'https://joppe.penguinlab.org/checkout/callback',
             );
             if (vnpayRes.isSuccess && vnpayRes.data is Map) {
@@ -322,6 +324,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     } catch (_) {
       // Fallback cục bộ an toàn nếu mạng chập chờn
+    }
+
+    // Đảm bảo đơn VNPAY luôn có liên kết thanh toán cổng VNPAY (chính thức hoặc sandbox fallback)
+    if (_selectedPaymentMethod == PaymentMethodType.vnpay && (vnpayPaymentUrl == null || vnpayPaymentUrl.isEmpty)) {
+      try {
+        final vnpayRes = await StoreDomainApiService().createVnPayPayment(
+          orderId: orderId,
+          orderCode: orderId,
+          amount: _grandTotal,
+          returnUrl: 'https://joppe.penguinlab.org/checkout/callback',
+        );
+        if (vnpayRes.isSuccess && vnpayRes.data is Map) {
+          final vnpayData = VnPayPaymentResponse.fromJson(Map<String, dynamic>.from(vnpayRes.data));
+          vnpayPaymentUrl = vnpayData.paymentUrl;
+          vnpayQrCodeUrl = vnpayData.getFullQrUrl(AppApiClient.instance.baseUrl);
+          vnpayPaymentId = vnpayData.paymentId;
+          vnpayTxnRef = vnpayData.txnRef;
+          vnpayQrCodeBase64 = vnpayData.qrCodeBase64;
+        }
+      } catch (_) {}
     }
 
     final createdOrder = Order(

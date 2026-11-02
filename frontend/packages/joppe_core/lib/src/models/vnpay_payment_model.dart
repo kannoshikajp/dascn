@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 class VnPayPaymentModel {
   final String paymentId;
   final String paymentUrl;
@@ -39,6 +42,20 @@ class VnPayPaymentModel {
       'qrCodeUrl': qrCodeUrl,
       'qrCodeBase64': qrCodeBase64,
     };
+  }
+
+  /// Safely extracts and decodes the QR code PNG image bytes,
+  /// stripping data URI scheme headers (e.g. "data:image/png;base64,") if present.
+  Uint8List? get qrBytes {
+    if (qrCodeBase64 == null || qrCodeBase64!.trim().isEmpty) return null;
+    try {
+      final clean = qrCodeBase64!.contains(',')
+          ? qrCodeBase64!.split(',').last.trim()
+          : qrCodeBase64!.trim();
+      return base64Decode(clean);
+    } catch (_) {
+      return null;
+    }
   }
 
   String? getFullQrUrl(String baseUrl) {
