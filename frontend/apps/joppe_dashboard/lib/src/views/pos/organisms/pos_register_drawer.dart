@@ -165,6 +165,7 @@ class PosRegisterDrawer extends StatelessWidget {
                           item: item,
                           onQuantityChanged: (qty) => onItemQuantityChanged(item..quantity = qty),
                           onRemove: () => onItemRemoved(item),
+                          onSerialNumbersChanged: () => onItemQuantityChanged(item),
                         );
                       },
                     ),

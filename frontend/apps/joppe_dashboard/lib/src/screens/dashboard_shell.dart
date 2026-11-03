@@ -89,16 +89,7 @@ class _DashboardShellState extends State<DashboardShell> {
     }
   }
 
-  String _resolveImageUrl(String url) {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    const defaultApiUrl = 'http://localhost:8080';
-    if (url.startsWith('/')) {
-      return '$defaultApiUrl$url';
-    }
-    return '$defaultApiUrl/$url';
-  }
+  String _resolveImageUrl(String url) => ApiClient.resolveUrl(url);
 
   String _getInitials(String name, String email) {
     if (name.trim().isNotEmpty) {

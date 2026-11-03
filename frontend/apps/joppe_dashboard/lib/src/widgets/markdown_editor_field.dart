@@ -363,16 +363,9 @@ class _MarkdownEditorFieldState extends State<MarkdownEditorField> {
                             child: MarkdownBody(
                               data: widget.controller.text,
                               selectable: true,
-                              imageDirectory: 'http://localhost:8080',
+                              imageDirectory: ApiClient.resolveUrl(''),
                               sizedImageBuilder: (config) {
-                                String resolved = config.uri.toString();
-                                if (!resolved.startsWith('http://') && !resolved.startsWith('https://')) {
-                                  if (resolved.startsWith('/')) {
-                                    resolved = 'http://localhost:8080$resolved';
-                                  } else {
-                                    resolved = 'http://localhost:8080/$resolved';
-                                  }
-                                }
+                                final resolved = ApiClient.resolveUrl(config.uri.toString());
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(vertical: JoppeSpacing.xs),
                                   child: ClipRRect(

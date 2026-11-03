@@ -119,4 +119,18 @@ class OrderService {
     });
     return OrderDetailModel.fromJson(response as Map<String, dynamic>);
   }
+
+  Future<OrderDetailModel> manualPaymentConfirm(
+    String id, {
+    required String referenceCode,
+    String? note,
+    String? managerPin,
+  }) async {
+    final response = await _client.post('${ApiConstants.adminOrders}/$id/manual-payment-confirm', {
+      'referenceCode': referenceCode,
+      if (note != null && note.isNotEmpty) 'note': note,
+      if (managerPin != null && managerPin.isNotEmpty) 'managerPin': managerPin,
+    });
+    return OrderDetailModel.fromJson(response as Map<String, dynamic>);
+  }
 }

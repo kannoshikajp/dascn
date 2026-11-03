@@ -143,12 +143,7 @@ class _InventoryViewState extends State<InventoryView> with SingleTickerProvider
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
-  String _resolveImageUrl(String url) {
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    const defaultApiUrl = 'http://localhost:8080';
-    if (url.startsWith('/')) return '$defaultApiUrl$url';
-    return '$defaultApiUrl/$url';
-  }
+  String _resolveImageUrl(String url) => ApiClient.resolveUrl(url);
 
   // ---------------------------------------------------------------------------
   // Tab 1: Receipts View (Inbound)

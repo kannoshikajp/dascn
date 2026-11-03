@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:joppe_core/joppe_core.dart';
 import 'package:joppe_design_system/joppe_design_system.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../../utils/receipt_printer_helper.dart';
 import '../../../utils/web_popup_helper.dart';
 
 /// Molecule: POS Cashier Dialog displaying QR code for customer scan,
@@ -29,34 +30,68 @@ class PosVnPayQrDialog extends StatefulWidget {
 
 class _PosVnPayQrDialogState extends State<PosVnPayQrDialog> {
   Timer? _pollingTimer;
+  Timer? _countdownTimer;
+  int _remainingSeconds = 600; // 10 minutes default Stock Hold TTL
   bool _isPaid = false;
+  bool _isExpired = false;
   bool _isManualConfirming = false;
+  late OrderDetailModel _currentOrder = widget.order;
 
   @override
   void initState() {
     super.initState();
+    _initTtlCountdown();
     _startPolling();
+  }
+
+  void _initTtlCountdown() {
+    if (widget.order.paymentExpiresAt != null) {
+      final diff = widget.order.paymentExpiresAt!.difference(DateTime.now()).inSeconds;
+      _remainingSeconds = diff > 0 ? diff : 0;
+    } else {
+      _remainingSeconds = 600;
+    }
+
+    if (_remainingSeconds <= 0) {
+      _isExpired = true;
+      return;
+    }
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (_remainingSeconds <= 1) {
+        timer.cancel();
+        _pollingTimer?.cancel();
+        setState(() {
+          _remainingSeconds = 0;
+          _isExpired = true;
+        });
+      } else {
+        setState(() => _remainingSeconds--);
+      }
+    });
   }
 
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    _countdownTimer?.cancel();
     super.dispose();
   }
 
   void _startPolling() {
+    if (_isExpired) return;
     _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
       try {
         final currentOrder = await widget.orderService.getAdminOrderDetail(widget.order.id);
         if (currentOrder.paymentStatus.toUpperCase() == 'PAID') {
           timer.cancel();
+          _countdownTimer?.cancel();
           if (mounted) {
-            setState(() => _isPaid = true);
-            await Future.delayed(const Duration(milliseconds: 600));
-            if (mounted) {
-              Navigator.pop(context, true);
-              widget.onPaymentCompleted();
-            }
+            setState(() {
+              _isPaid = true;
+              _currentOrder = currentOrder;
+            });
           }
         }
       } catch (_) {
@@ -66,17 +101,101 @@ class _PosVnPayQrDialogState extends State<PosVnPayQrDialog> {
   }
 
   Future<void> _manualConfirm() async {
+    final refController = TextEditingController();
+    final noteController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.shield_outlined, color: Colors.blue, size: 22),
+            SizedBox(width: 8),
+            Text('Xác thực thanh toán thủ công', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Để chống thất thoát, vui lòng nhập mã giao dịch ngân hàng hoặc số biên nhận thu tiền mặt:',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: refController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Mã tham chiếu / Mã giao dịch (*)',
+                  hintText: 'VD: MBBANK-98231, VNPAY-1122...',
+                  prefixIcon: Icon(Icons.receipt_long, size: 18),
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().length < 4) {
+                    return 'Vui lòng nhập tối thiểu 4 ký tự mã giao dịch';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: noteController,
+                decoration: const InputDecoration(
+                  labelText: 'Ghi chú xác nhận (tùy chọn)',
+                  hintText: 'VD: Khách chuyển khoản đúng nội dung',
+                  prefixIcon: Icon(Icons.note_alt_outlined, size: 18),
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy bỏ'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            icon: const Icon(Icons.check, size: 16),
+            label: const Text('Xác nhận & Lưu vết'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     setState(() => _isManualConfirming = true);
     try {
-      await widget.orderService.updatePaymentStatus(widget.order.id, 'PAID');
+      OrderDetailModel updated;
+      try {
+        updated = await widget.orderService.manualPaymentConfirm(
+          widget.order.id,
+          referenceCode: refController.text.trim(),
+          note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
+        );
+      } catch (_) {
+        updated = await widget.orderService.updatePaymentStatus(widget.order.id, 'PAID');
+      }
       _pollingTimer?.cancel();
+      _countdownTimer?.cancel();
       if (mounted) {
-        setState(() => _isPaid = true);
-        await Future.delayed(const Duration(milliseconds: 400));
-        if (mounted) {
-          Navigator.pop(context, true);
-          widget.onPaymentCompleted();
-        }
+        setState(() {
+          _isPaid = true;
+          _currentOrder = updated;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -99,6 +218,12 @@ class _PosVnPayQrDialogState extends State<PosVnPayQrDialog> {
       return;
     }
     openPopupWindow(url);
+  }
+
+  String _formatTtl(int seconds) {
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   String _formatPrice(double price) {
@@ -139,9 +264,7 @@ class _PosVnPayQrDialogState extends State<PosVnPayQrDialog> {
     // 2. Or Backend-generated QR Code Image URL
     final qrUrl = widget.vnpayInfo.qrCodeUrl;
     if (qrUrl != null && qrUrl.isNotEmpty) {
-      final resolvedUrl = qrUrl.startsWith('http')
-          ? qrUrl
-          : '${ApiConstants.defaultBaseUrl}$qrUrl';
+      final resolvedUrl = ApiClient.resolveUrl(qrUrl);
       return Image.network(
         resolvedUrl,
         width: 220,
@@ -211,7 +334,12 @@ class _PosVnPayQrDialogState extends State<PosVnPayQrDialog> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      if (_isPaid) {
+                        widget.onPaymentCompleted();
+                      }
+                    },
                     icon: const Icon(Icons.close),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -220,32 +348,186 @@ class _PosVnPayQrDialogState extends State<PosVnPayQrDialog> {
               const Divider(height: 24),
 
               if (_isPaid) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 36),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Column(
                     children: [
-                      Icon(Icons.check_circle_rounded, color: Colors.green, size: 64),
-                      SizedBox(height: 12),
-                      Text('Thanh toán thành công!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green)),
-                      SizedBox(height: 4),
-                      Text('Đơn hàng đã được xác nhận thanh toán.'),
+                      const Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Thanh toán thành công!',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green),
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest.withAlpha(70),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.green.withAlpha(60)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Mã đơn hàng: ${_currentOrder.orderCode}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Khách hàng: ${_currentOrder.recipientName} (${_currentOrder.recipientPhone})',
+                              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Tổng tiền thanh toán: ${_formatPrice(_currentOrder.finalAmount)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green),
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                Text('Trạng thái: ', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withAlpha(30),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: Colors.green.withAlpha(80)),
+                                  ),
+                                  child: const Text(
+                                    'ĐÃ THANH TOÁN (PAID)',
+                                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 11),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_currentOrder.manualPaymentRef != null && _currentOrder.manualPaymentRef!.isNotEmpty) ...[
+                              const SizedBox(height: 5),
+                              Text(
+                                'Mã GD đối soát: ${_currentOrder.manualPaymentRef}',
+                                style: const TextStyle(color: Colors.blueGrey, fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => printReceipt(context, _currentOrder),
+                              icon: const Icon(Icons.print_outlined, size: 18),
+                              label: const Text('In hóa đơn', maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                Navigator.pop(context, true);
+                                widget.onPaymentCompleted();
+                              },
+                              icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
+                              label: const Text('Tạo đơn tiếp theo', maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
               ] else ...[
-                // Backend Generated QR Code (with local fallback)
-                Center(
+                // TTL Countdown Chip
+                Align(
+                  alignment: Alignment.center,
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: colorScheme.outlineVariant.withAlpha(120)),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 10, offset: const Offset(0, 4)),
+                      color: _isExpired
+                          ? Colors.red.withAlpha(25)
+                          : (_remainingSeconds < 60 ? Colors.orange.withAlpha(30) : colorScheme.primaryContainer.withAlpha(80)),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _isExpired
+                            ? Colors.red.withAlpha(120)
+                            : (_remainingSeconds < 60 ? Colors.orange : colorScheme.primary.withAlpha(120)),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isExpired ? Icons.timer_off_outlined : Icons.timer_outlined,
+                          size: 14,
+                          color: _isExpired ? Colors.red : (_remainingSeconds < 60 ? Colors.orange : colorScheme.primary),
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            _isExpired
+                                ? 'Hết hạn giữ hàng (TTL)'
+                                : 'Giữ tồn kho: ${_formatTtl(_remainingSeconds)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: _isExpired ? Colors.red : (_remainingSeconds < 60 ? Colors.orange : colorScheme.primary),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
-                    child: _buildQrCode(qrData, colorScheme),
+                  ),
+                ),
+                const SizedBox(height: JoppeSpacing.sm),
+
+                // Backend Generated QR Code (with local fallback)
+                Center(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colorScheme.outlineVariant.withAlpha(120)),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 10, offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        child: Opacity(
+                          opacity: _isExpired ? 0.2 : 1.0,
+                          child: _buildQrCode(qrData, colorScheme),
+                        ),
+                      ),
+                      if (_isExpired)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withAlpha(180),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 36),
+                              SizedBox(height: 6),
+                              Text(
+                                'Mã QR đã hết hạn',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              Text(
+                                'Tồn kho đã được giải phóng',
+                                style: TextStyle(color: Colors.white70, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: JoppeSpacing.md),
@@ -275,16 +557,29 @@ class _PosVnPayQrDialogState extends State<PosVnPayQrDialog> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary)),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        'Đang chờ khách quét mã thanh toán...',
-                        style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    if (!_isExpired) ...[
+                      SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary)),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Đang chờ khách quét mã thanh toán...',
+                          style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      const Icon(Icons.info_outline, size: 14, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Đã dừng chờ - Vui lòng đóng cửa sổ để tạo lại.',
+                          style: theme.textTheme.bodySmall?.copyWith(color: Colors.red),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: JoppeSpacing.md),
@@ -294,7 +589,7 @@ class _PosVnPayQrDialogState extends State<PosVnPayQrDialog> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _openPopupWindow,
+                        onPressed: _isExpired ? null : _openPopupWindow,
                         icon: const Icon(Icons.open_in_new_rounded, size: 16),
                         label: const Text('Mở Popup VNPAY', style: TextStyle(fontSize: 12)),
                         style: OutlinedButton.styleFrom(

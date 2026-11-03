@@ -32,17 +32,7 @@ class _ImageUploadFieldState extends State<ImageUploadField> {
 
   String get _currentUrl => widget.controller.text.trim();
 
-  String _resolveImageUrl(String url) {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    // Resolve relative backend /uploads url to current API host
-    const defaultApiUrl = 'http://localhost:8080';
-    if (url.startsWith('/')) {
-      return '$defaultApiUrl$url';
-    }
-    return '$defaultApiUrl/$url';
-  }
+  String _resolveImageUrl(String url) => ApiClient.resolveUrl(url);
 
   Future<void> _pickAndUploadImage() async {
     if (widget.mediaUploadService == null) {

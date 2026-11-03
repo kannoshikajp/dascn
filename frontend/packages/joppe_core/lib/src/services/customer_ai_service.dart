@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../api/api_client.dart';
 import '../models/customer_ai_model.dart';
 
@@ -15,7 +16,11 @@ class CustomerAiService {
       'history': history.map((msg) => msg.toJson()).toList(),
     };
 
-    final response = await _client.post('/api/v1/ai/chat', payload);
+    final response = await _client.post(
+      '/api/v1/ai/chat',
+      payload,
+      const Duration(seconds: 90),
+    );
     if (response is Map<String, dynamic>) {
       return CustomerAiChatResponse.fromJson(response);
     }

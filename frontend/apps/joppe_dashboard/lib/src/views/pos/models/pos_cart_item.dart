@@ -9,6 +9,7 @@ class PosCartItem {
   final double unitPrice;
   int quantity;
   final int stockAvailable;
+  List<String> serialNumbers;
 
   PosCartItem({
     required this.variantId,
@@ -21,7 +22,8 @@ class PosCartItem {
     required this.unitPrice,
     required this.quantity,
     required this.stockAvailable,
-  });
+    List<String>? serialNumbers,
+  }) : serialNumbers = serialNumbers ?? [];
 
   double get lineTotal => unitPrice * quantity;
 }

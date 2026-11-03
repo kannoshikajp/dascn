@@ -12,10 +12,13 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import joppe.backend.admin.dto.CreateAdminOrderRequest;
+import joppe.backend.admin.dto.ManualPaymentConfirmRequest;
 import joppe.backend.domain.cart.CartItem;
 import joppe.backend.domain.cart.CartItemRepository;
 import joppe.backend.domain.catalog.Product;
 import joppe.backend.domain.catalog.ProductRepository;
+import joppe.backend.domain.catalog.ProductSerial;
+import joppe.backend.domain.catalog.ProductSerialRepository;
 import joppe.backend.domain.catalog.ProductVariant;
 import joppe.backend.domain.catalog.ProductVariantRepository;
 import joppe.backend.domain.catalog.ProductVariantService;
@@ -48,6 +51,7 @@ public class OrderService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final GoodReceiptService goodReceiptService;
+    private final ProductSerialRepository productSerialRepository;
 
     private static final DateTimeFormatter CODE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -102,6 +106,9 @@ public class OrderService {
                 : (isOnlinePayment ? "UNPAID" : "PAID");
 
         OffsetDateTime paidAt = "PAID".equalsIgnoreCase(initialPaymentStatus) ? now : null;
+        OffsetDateTime paymentExpiresAt = ("UNPAID".equalsIgnoreCase(initialPaymentStatus) && isOnlinePayment)
+                ? now.plusMinutes(10)
+                : null;
 
         Order order = Order.builder()
                 .orderCode(orderCode)
@@ -110,6 +117,7 @@ public class OrderService {
                 .orderStatus("ACCEPTED")
                 .paymentStatus(initialPaymentStatus)
                 .paidAt(paidAt)
+                .paymentExpiresAt(paymentExpiresAt)
                 .recipientName(request.recipientName().trim())
                 .recipientPhone(request.recipientPhone().trim())
                 .shippingAddress(request.shippingAddress().trim())
@@ -211,6 +219,7 @@ public class OrderService {
                 productVariantService.releaseStock(item.getVariantId(), item.getQuantity());
             }
         }
+        releaseSerialNumbersForOrder(items);
 
         order.setOrderStatus("REFUND");
         order.setPaymentStatus("REFUND");
@@ -259,6 +268,7 @@ public class OrderService {
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime paidAt = "PAID".equalsIgnoreCase(paymentStatus) ? now : null;
         OffsetDateTime deliveredAt = ("SHOWROOM_BUY".equalsIgnoreCase(orderStatus) || "SHIPPED".equalsIgnoreCase(orderStatus)) ? now : null;
+        OffsetDateTime paymentExpiresAt = "UNPAID".equalsIgnoreCase(paymentStatus) ? now.plusMinutes(10) : null;
 
         List<UUID> variantIds = request.items().stream().map(CheckoutItemInput::variantId).distinct().toList();
         Map<UUID, ProductVariant> variantMap = productVariantRepository.findAllById(variantIds).stream()
@@ -283,6 +293,7 @@ public class OrderService {
                 .paymentStatus(paymentStatus)
                 .paidAt(paidAt)
                 .deliveredAt(deliveredAt)
+                .paymentExpiresAt(paymentExpiresAt)
                 .recipientName(request.recipientName().trim())
                 .recipientPhone(request.recipientPhone().trim())
                 .shippingAddress(request.shippingAddress().trim())
@@ -339,7 +350,12 @@ public class OrderService {
                     .warrantyMonthsSnapshot(12)
                     .build();
 
-            savedItems.add(orderItemRepository.save(item));
+            OrderItem savedItem = orderItemRepository.save(item);
+            savedItems.add(savedItem);
+
+            if (input.serialNumbers() != null && !input.serialNumbers().isEmpty()) {
+                assignSerialNumbersToOrderItem(savedItem, input.serialNumbers(), variant.getId());
+            }
         }
 
         BigDecimal finalAmount = subtotal.subtract(discountAmount).add(shippingFee);
@@ -469,6 +485,7 @@ public class OrderService {
                     }
                 }
             }
+            releaseSerialNumbersForOrder(items);
             if ("PAID".equalsIgnoreCase(order.getPaymentStatus())) {
                 order.setPaymentStatus("REFUND");
             }
@@ -505,6 +522,74 @@ public class OrderService {
 
         List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
         return mapToOrderResponse(order, items, null);
+    }
+
+    @Transactional
+    public OrderResponse manualPaymentConfirm(UUID staffUserId, UUID orderId, ManualPaymentConfirmRequest request) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
+
+        if ("PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+            throw new IllegalStateException("Order is already marked as PAID.");
+        }
+        if ("REFUND".equalsIgnoreCase(order.getPaymentStatus())) {
+            throw new IllegalStateException("Cannot confirm payment for refunded order.");
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        order.setPaymentStatus("PAID");
+        order.setPaidAt(now);
+        order.setPaymentExpiresAt(null);
+        order.setManualPaymentRef(request.referenceCode().trim());
+        order.setPaymentConfirmedBy(staffUserId);
+        order.setPaymentConfirmNote(request.note() != null && !request.note().isBlank() ? request.note().trim() : null);
+        orderRepository.save(order);
+
+        List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
+        return mapToOrderResponse(order, items, null);
+    }
+
+    private void assignSerialNumbersToOrderItem(OrderItem orderItem, List<String> serialNumbers, UUID variantId) {
+        OffsetDateTime now = OffsetDateTime.now();
+        for (String sn : serialNumbers) {
+            String trimmed = (sn != null) ? sn.trim() : "";
+            if (trimmed.isEmpty()) continue;
+            Optional<ProductSerial> existing = productSerialRepository.findBySerialNumber(trimmed);
+            if (existing.isPresent()) {
+                ProductSerial serial = existing.get();
+                if (!serial.getVariantId().equals(variantId)) {
+                    throw new IllegalArgumentException("Serial number " + trimmed + " belongs to a different product variant.");
+                }
+                if ("SOLD".equalsIgnoreCase(serial.getStatus())) {
+                    throw new IllegalStateException("Serial number " + trimmed + " is already marked as SOLD.");
+                }
+                serial.setStatus("SOLD");
+                serial.setOrderItemId(orderItem.getId());
+                serial.setSoldAt(now);
+                productSerialRepository.save(serial);
+            } else {
+                ProductSerial newSerial = ProductSerial.builder()
+                        .variantId(variantId)
+                        .serialNumber(trimmed)
+                        .status("SOLD")
+                        .orderItemId(orderItem.getId())
+                        .soldAt(now)
+                        .build();
+                productSerialRepository.save(newSerial);
+            }
+        }
+    }
+
+    private void releaseSerialNumbersForOrder(List<OrderItem> items) {
+        for (OrderItem item : items) {
+            List<ProductSerial> serials = productSerialRepository.findByOrderItemId(item.getId());
+            for (ProductSerial s : serials) {
+                s.setStatus("AVAILABLE");
+                s.setOrderItemId(null);
+                s.setSoldAt(null);
+                productSerialRepository.save(s);
+            }
+        }
     }
 
     public void validateOrderStatusTransition(Order order, String targetStatus) {
@@ -638,6 +723,8 @@ public class OrderService {
         List<OrderItemResponse> itemResponses = items.stream().map(item -> {
             ProductVariant pv = item.getVariantId() != null ? variantMap.get(item.getVariantId()) : null;
             String thumb = (pv != null) ? pv.getThumbnailUrl() : null;
+            List<ProductSerial> serials = productSerialRepository.findByOrderItemId(item.getId());
+            List<String> snList = (serials != null) ? serials.stream().map(ProductSerial::getSerialNumber).toList() : List.of();
             return new OrderItemResponse(
                     item.getId(),
                     item.getVariantId(),
@@ -648,7 +735,8 @@ public class OrderService {
                     item.getUnitPrice(),
                     item.getSubtotal(),
                     item.getWarrantyMonthsSnapshot(),
-                    thumb
+                    thumb,
+                    snList
             );
         }).toList();
 
@@ -671,7 +759,11 @@ public class OrderService {
                 itemResponses,
                 order.getOrderChannel(),
                 order.getPaidAt(),
-                order.getDeliveredAt()
+                order.getDeliveredAt(),
+                order.getPaymentExpiresAt(),
+                order.getManualPaymentRef(),
+                order.getPaymentConfirmedBy(),
+                order.getPaymentConfirmNote()
         );
     }
 

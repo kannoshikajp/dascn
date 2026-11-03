@@ -87,7 +87,8 @@ void main() {
           headers: {'content-type': 'application/json'},
         );
       }
-      if (request.url.path == '/api/v1/admin/orders/new-ord-1/payment-status' && request.method == 'PATCH') {
+      if ((request.url.path == '/api/v1/admin/orders/new-ord-1/payment-status' && request.method == 'PATCH') ||
+          (request.url.path == '/api/v1/admin/orders/new-ord-1/manual-payment-confirm' && request.method == 'POST')) {
         isOrderPaid = true;
         return http.Response(
           jsonEncode({
@@ -190,9 +191,18 @@ void main() {
     await tester.tap(checkoutButton);
     await tester.pumpAndSettle();
 
-    // Verify receipt success dialog appears
+    // Verify receipt success dialog appears with print option
     expect(find.text('Thanh toán thành công!'), findsOneWidget);
     expect(find.textContaining('ORD-POS-20261029-99'), findsOneWidget);
+    expect(find.text('In hóa đơn'), findsOneWidget);
+    expect(find.text('Tạo đơn tiếp theo'), findsOneWidget);
+
+    await tester.tap(find.text('In hóa đơn'));
+    await tester.pump();
+
+    await tester.tap(find.text('Tạo đơn tiếp theo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Thanh toán thành công!'), findsNothing);
   });
 
   testWidgets('PosCashierView opens VNPay QR dialog when QR payment is selected', (tester) async {
@@ -241,13 +251,27 @@ void main() {
     expect(find.text('Mở Popup VNPAY'), findsOneWidget);
     expect(find.text('Xác nhận nhận tiền'), findsOneWidget);
 
-    // Click confirm manual payment (this cancels the timer and completes order)
+    // Click confirm manual payment (opens manual audit dialog)
     await tester.tap(find.text('Xác nhận nhận tiền'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Xác thực thanh toán thủ công'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).first, 'MBBANK-REF-9988');
+    await tester.tap(find.text('Xác nhận & Lưu vết'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
 
-    // Verify order completed
+    // Verify order completed with single dialog and print option
     expect(find.text('Thanh toán thành công!'), findsOneWidget);
+    expect(find.text('In hóa đơn'), findsOneWidget);
+    expect(find.text('Tạo đơn tiếp theo'), findsOneWidget);
+
+    await tester.tap(find.text('In hóa đơn'));
+    await tester.pump();
+
+    await tester.tap(find.text('Tạo đơn tiếp theo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Thanh toán thành công!'), findsNothing);
   });
 }

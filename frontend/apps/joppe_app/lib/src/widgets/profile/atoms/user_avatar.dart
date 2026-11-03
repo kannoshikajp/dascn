@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:joppe_core/joppe_core.dart';
 import '../../../core/theme/app_colors.dart';
 
 /// Atom: Avatar người dùng bo tròn mềm mại
@@ -16,6 +17,7 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedUrl = ApiClient.resolveUrl(avatarUrl);
     return Container(
       width: size,
       height: size,
@@ -28,9 +30,9 @@ class UserAvatar extends StatelessWidget {
         ),
       ),
       child: ClipOval(
-        child: (avatarUrl != null && avatarUrl!.trim().isNotEmpty)
+        child: resolvedUrl.isNotEmpty
             ? Image.network(
-                avatarUrl!,
+                resolvedUrl,
                 width: size,
                 height: size,
                 fit: BoxFit.cover,

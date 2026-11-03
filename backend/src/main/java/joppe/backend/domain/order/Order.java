@@ -86,6 +86,18 @@ public class Order {
     @Column(name = "customer_note", columnDefinition = "TEXT")
     private String customerNote;
 
+    @Column(name = "payment_expires_at")
+    private OffsetDateTime paymentExpiresAt;
+
+    @Column(name = "manual_payment_ref", length = 100)
+    private String manualPaymentRef;
+
+    @Column(name = "payment_confirmed_by")
+    private UUID paymentConfirmedBy;
+
+    @Column(name = "payment_confirm_note", columnDefinition = "TEXT")
+    private String paymentConfirmNote;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 

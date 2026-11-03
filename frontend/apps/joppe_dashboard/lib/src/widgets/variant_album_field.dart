@@ -32,12 +32,7 @@ class _VariantAlbumFieldState extends State<VariantAlbumField> {
     _mediaIds.addAll(widget.initialMediaIds);
   }
 
-  String _resolveUrl(String url) {
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    const defaultApiUrl = 'http://localhost:8080';
-    if (url.startsWith('/')) return '$defaultApiUrl$url';
-    return '$defaultApiUrl/$url';
-  }
+  String _resolveUrl(String url) => ApiClient.resolveUrl(url);
 
   Future<void> _openLibrary() async {
     if (widget.mediaUploadService == null) return;

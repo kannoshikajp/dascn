@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import joppe.backend.admin.dto.CreateAdminOrderRequest;
+import joppe.backend.admin.dto.ManualPaymentConfirmRequest;
 import joppe.backend.admin.dto.UpdateOrderStatusRequest;
 import joppe.backend.admin.dto.UpdatePaymentStatusRequest;
 import joppe.backend.domain.order.OrderService;
@@ -77,5 +78,14 @@ public class AdminOrderController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdatePaymentStatusRequest request) {
         return orderService.updatePaymentStatusByAdmin(id, request.paymentStatus());
+    }
+
+    @PostMapping("/{id}/manual-payment-confirm")
+    @Operation(summary = "Manually confirm payment with bank transaction/slip reference and audit trail")
+    public OrderResponse manualPaymentConfirm(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID id,
+            @Valid @RequestBody ManualPaymentConfirmRequest request) {
+        return orderService.manualPaymentConfirm(getStaffUserId(jwt), id, request);
     }
 }

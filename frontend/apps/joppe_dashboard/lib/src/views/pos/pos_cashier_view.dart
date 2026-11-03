@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:joppe_core/joppe_core.dart';
 import 'package:joppe_design_system/joppe_design_system.dart';
+import '../../utils/receipt_printer_helper.dart';
 import 'models/pos_cart_item.dart';
 import 'molecules/pos_checkout_panel.dart';
 import 'molecules/pos_qr_payment_dialog.dart';
@@ -151,6 +152,7 @@ class _PosCashierViewState extends State<PosCashierView> {
         'variantId': i.variantId,
         'quantity': i.quantity,
         'unitPrice': i.unitPrice,
+        if (i.serialNumbers.isNotEmpty) 'serialNumbers': i.serialNumbers,
       }).toList();
 
       final isQr = _paymentMethod == PosPaymentMethod.qrTransfer;
@@ -187,7 +189,7 @@ class _PosCashierViewState extends State<PosCashierView> {
                   vnpayInfo: vnpayInfo,
                   orderService: widget.orderService,
                   onPaymentCompleted: () {
-                    _showOrderReceiptSuccess(createdOrder);
+                    // Dialog already renders success receipt & print options.
                   },
                 ),
               );
@@ -228,6 +230,11 @@ class _PosCashierViewState extends State<PosCashierView> {
           ],
         ),
         actions: [
+          OutlinedButton.icon(
+            onPressed: () => printReceipt(context, order),
+            icon: const Icon(Icons.print_outlined),
+            label: const Text('In hóa đơn'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Tạo đơn tiếp theo'),

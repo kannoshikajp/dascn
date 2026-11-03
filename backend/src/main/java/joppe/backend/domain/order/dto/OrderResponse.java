@@ -24,8 +24,38 @@ public record OrderResponse(
         List<OrderItemResponse> items,
         String orderChannel,
         OffsetDateTime paidAt,
-        OffsetDateTime deliveredAt
+        OffsetDateTime deliveredAt,
+        OffsetDateTime paymentExpiresAt,
+        String manualPaymentRef,
+        UUID paymentConfirmedBy,
+        String paymentConfirmNote
 ) {
+    public OrderResponse(
+            UUID id,
+            String orderCode,
+            UUID userId,
+            String orderStatus,
+            String paymentStatus,
+            String recipientName,
+            String recipientPhone,
+            String shippingAddress,
+            BigDecimal subtotalAmount,
+            BigDecimal discountAmount,
+            BigDecimal shippingFee,
+            BigDecimal finalAmount,
+            String customerNote,
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt,
+            List<OrderItemResponse> items,
+            String orderChannel,
+            OffsetDateTime paidAt,
+            OffsetDateTime deliveredAt
+    ) {
+        this(id, orderCode, userId, orderStatus, paymentStatus, recipientName, recipientPhone, shippingAddress,
+                subtotalAmount, discountAmount, shippingFee, finalAmount, customerNote, createdAt, updatedAt, items,
+                orderChannel, paidAt, deliveredAt, null, null, null, null);
+    }
+
     public OrderResponse(
             UUID id,
             String orderCode,
@@ -46,6 +76,6 @@ public record OrderResponse(
     ) {
         this(id, orderCode, userId, orderStatus, paymentStatus, recipientName, recipientPhone, shippingAddress,
                 subtotalAmount, discountAmount, shippingFee, finalAmount, customerNote, createdAt, updatedAt, items,
-                "ONLINE", null, null);
+                "ONLINE", null, null, null, null, null, null);
     }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:joppe_core/joppe_core.dart';
 import '../../core/theme/app_colors.dart';
 import 'cyber_effects.dart';
 
@@ -57,12 +58,13 @@ class ProductImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl.trim().isEmpty) {
+    final resolvedUrl = ApiClient.resolveUrl(imageUrl);
+    if (resolvedUrl.trim().isEmpty) {
       return _buildPlaceholder();
     }
 
     return Image.network(
-      imageUrl,
+      resolvedUrl,
       fit: fit,
       width: width,
       height: height,

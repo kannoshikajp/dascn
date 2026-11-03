@@ -14,6 +14,10 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
+  static ApiClient? _defaultInstance;
+  static ApiClient get defaultInstance => _defaultInstance ??= ApiClient();
+  static set defaultInstance(ApiClient client) => _defaultInstance = client;
+
   final String baseUrl;
   final http.Client _client;
   String? _token;
@@ -21,7 +25,9 @@ class ApiClient {
   ApiClient({
     this.baseUrl = 'http://localhost:8080',
     http.Client? client,
-  }) : _client = client ?? http.Client();
+  }) : _client = client ?? http.Client() {
+    _defaultInstance ??= this;
+  }
 
   void setToken(String? token) {
     _token = token;
@@ -30,14 +36,35 @@ class ApiClient {
   String? get token => _token;
   bool get hasToken => _token != null && _token!.isNotEmpty;
 
-  /// Resolves relative media paths (e.g. '/uploads/products/xyz.webp') to absolute URLs with baseUrl.
-  String resolveMediaUrl(String? url) {
+  /// Resolves media or image paths to absolute URLs using baseUrl or default instance.
+  /// Automatically rewrites legacy localhost URLs if configured with a non-localhost base.
+  static String resolveUrl(String? url, [String? explicitBaseUrl]) {
     if (url == null || url.trim().isEmpty) return '';
-    final trimmed = url.trim();
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    var trimmed = url.trim();
+
+    final base = (explicitBaseUrl != null && explicitBaseUrl.isNotEmpty)
+        ? explicitBaseUrl
+        : (_defaultInstance?.baseUrl ??
+            const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8080'));
+
+    // If backend or DB saved localhost:8080 in dev, rewrite it to current non-localhost baseUrl
+    if (!base.contains('localhost:8080') && !base.contains('127.0.0.1:8080')) {
+      if (trimmed.startsWith('http://localhost:8080')) {
+        trimmed = trimmed.substring('http://localhost:8080'.length);
+      } else if (trimmed.startsWith('http://127.0.0.1:8080')) {
+        trimmed = trimmed.substring('http://127.0.0.1:8080'.length);
+      }
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
     final cleanPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
-    return '$baseUrl$cleanPath';
+    return '$base$cleanPath';
   }
+
+  /// Resolves relative media paths (e.g. '/uploads/products/xyz.webp') to absolute URLs with baseUrl.
+  String resolveMediaUrl(String? url) => resolveUrl(url, baseUrl);
 
   Map<String, String> _headers() {
     final map = {
@@ -101,13 +128,14 @@ class ApiClient {
     throw ApiException(response.statusCode, 'HTTP ${response.statusCode}: ${response.body}');
   }
 
-  Future<dynamic> post(String endpoint, [Map<String, dynamic>? body]) async {
+  Future<dynamic> post(String endpoint, [Map<String, dynamic>? body, Duration? timeout]) async {
     final uri = Uri.parse('$baseUrl$endpoint');
-    final response = await _client.post(
+    final future = _client.post(
       uri,
       headers: _headers(),
       body: body != null ? jsonEncode(body) : null,
     );
+    final response = timeout != null ? await future.timeout(timeout) : await future;
     return _handleResponse(response);
   }
 

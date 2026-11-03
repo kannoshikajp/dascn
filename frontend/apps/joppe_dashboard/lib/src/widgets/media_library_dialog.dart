@@ -73,12 +73,7 @@ class _MediaLibraryDialogState extends State<MediaLibraryDialog> {
     super.dispose();
   }
 
-  String _resolveUrl(String url) {
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    const defaultApiUrl = 'http://localhost:8080';
-    if (url.startsWith('/')) return '$defaultApiUrl$url';
-    return '$defaultApiUrl/$url';
-  }
+  String _resolveUrl(String url) => ApiClient.resolveUrl(url);
 
   Future<void> _loadMedia() async {
     setState(() {

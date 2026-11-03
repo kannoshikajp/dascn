@@ -9,6 +9,7 @@ class OrderItemModel {
   final double subtotal;
   final int warrantyMonthsSnapshot;
   final String? thumbnailUrl;
+  final List<String> serialNumbers;
 
   const OrderItemModel({
     required this.id,
@@ -21,6 +22,7 @@ class OrderItemModel {
     required this.subtotal,
     this.warrantyMonthsSnapshot = 12,
     this.thumbnailUrl,
+    this.serialNumbers = const [],
   });
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
@@ -35,6 +37,10 @@ class OrderItemModel {
       subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
       warrantyMonthsSnapshot: (json['warrantyMonthsSnapshot'] as num?)?.toInt() ?? 12,
       thumbnailUrl: json['thumbnailUrl'] as String?,
+      serialNumbers: (json['serialNumbers'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -49,5 +55,6 @@ class OrderItemModel {
         'subtotal': subtotal,
         'warrantyMonthsSnapshot': warrantyMonthsSnapshot,
         'thumbnailUrl': thumbnailUrl,
+        'serialNumbers': serialNumbers,
       };
 }

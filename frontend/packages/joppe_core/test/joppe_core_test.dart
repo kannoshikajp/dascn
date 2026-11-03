@@ -240,4 +240,63 @@ void main() {
     expect(response.quickReplies.length, 2);
     expect(response.executedTools.first, 'search_products');
   });
+
+  group('ApiClient media url resolution', () {
+    test('resolveUrl converts relative, legacy localhost, and keeps external URLs', () {
+      final client = ApiClient(baseUrl: 'https://joppe.penguinlab.org');
+      ApiClient.defaultInstance = client;
+
+      expect(ApiClient.resolveUrl('/uploads/img.webp'), 'https://joppe.penguinlab.org/uploads/img.webp');
+      expect(ApiClient.resolveUrl('uploads/img.webp'), 'https://joppe.penguinlab.org/uploads/img.webp');
+      expect(ApiClient.resolveUrl('http://localhost:8080/uploads/old.jpg'), 'https://joppe.penguinlab.org/uploads/old.jpg');
+      expect(ApiClient.resolveUrl('http://127.0.0.1:8080/uploads/old.jpg'), 'https://joppe.penguinlab.org/uploads/old.jpg');
+      expect(ApiClient.resolveUrl('https://example.com/ext.png'), 'https://example.com/ext.png');
+      expect(ApiClient.resolveUrl(null), '');
+      expect(ApiClient.resolveUrl('   '), '');
+    });
+  });
+
+  test('OrderDetailModel and OrderItemModel serialization with serials, TTL and audit trail', () {
+    final order = OrderDetailModel.fromJson({
+      'id': 'ord-123',
+      'orderCode': 'ORD-2026-TEST',
+      'userId': 'usr-456',
+      'orderStatus': 'ACCEPTED',
+      'paymentStatus': 'PAID',
+      'recipientName': 'Nguyen Van A',
+      'recipientPhone': '0901234567',
+      'shippingAddress': 'Store Counter',
+      'subtotalAmount': 5000000.0,
+      'discountAmount': 0.0,
+      'shippingFee': 0.0,
+      'finalAmount': 5000000.0,
+      'paymentExpiresAt': '2026-11-03T12:00:00.000Z',
+      'manualPaymentRef': 'MBBANK-TXN-9988',
+      'paymentConfirmedBy': 'staff-uuid-789',
+      'paymentConfirmNote': 'Cashier verified slip',
+      'items': [
+        {
+          'id': 'item-1',
+          'variantId': 'var-1',
+          'skuSnapshot': 'SKU-RTX4070',
+          'productNameSnapshot': 'RTX 4070 Dual',
+          'variantNameSnapshot': '12GB GDDR6X',
+          'quantity': 2,
+          'unitPrice': 2500000.0,
+          'subtotal': 5000000.0,
+          'serialNumbers': ['SN-RTX-001', 'SN-RTX-002'],
+        }
+      ],
+    });
+
+    expect(order.orderCode, 'ORD-2026-TEST');
+    expect(order.manualPaymentRef, 'MBBANK-TXN-9988');
+    expect(order.paymentExpiresAt, isNotNull);
+    expect(order.items.length, 1);
+    expect(order.items.first.serialNumbers, ['SN-RTX-001', 'SN-RTX-002']);
+
+    final json = order.toJson();
+    expect(json['manualPaymentRef'], 'MBBANK-TXN-9988');
+    expect((json['items'] as List).first['serialNumbers'], ['SN-RTX-001', 'SN-RTX-002']);
+  });
 }

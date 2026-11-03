@@ -61,5 +61,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Query("SELECT o FROM Order o WHERE o.createdAt >= :since ORDER BY o.createdAt ASC")
     List<Order> findOrdersSince(@Param("since") java.time.OffsetDateTime since);
 
+    List<Order> findByPaymentStatusAndPaymentExpiresAtBefore(String paymentStatus, java.time.OffsetDateTime expiresBefore);
+
     List<Order> findTop5ByOrderByCreatedAtDesc();
 }

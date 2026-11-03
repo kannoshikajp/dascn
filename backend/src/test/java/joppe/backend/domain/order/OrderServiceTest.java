@@ -13,9 +13,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import joppe.backend.admin.dto.CreateAdminOrderRequest;
+import joppe.backend.admin.dto.ManualPaymentConfirmRequest;
 import joppe.backend.domain.cart.CartItemRepository;
 import joppe.backend.domain.catalog.Product;
 import joppe.backend.domain.catalog.ProductRepository;
+import joppe.backend.domain.catalog.ProductSerialRepository;
 import joppe.backend.domain.catalog.ProductVariant;
 import joppe.backend.domain.catalog.ProductVariantRepository;
 import joppe.backend.domain.catalog.ProductVariantService;
@@ -67,6 +69,9 @@ class OrderServiceTest {
     @Mock
     private GoodReceiptService goodReceiptService;
 
+    @Mock
+    private ProductSerialRepository productSerialRepository;
+
     private OrderService orderService;
 
     @BeforeEach
@@ -81,7 +86,8 @@ class OrderServiceTest {
                 userRepository,
                 roleRepository,
                 passwordEncoder,
-                goodReceiptService
+                goodReceiptService,
+                productSerialRepository
         );
     }
 
@@ -486,5 +492,40 @@ class OrderServiceTest {
 
         assertNotNull(result);
         verify(orderRepository).findFilteredOrders("PENDING", "UNPAID", "%ord-123%");
+    }
+
+    @Test
+    void manualPaymentConfirm_validInput_updatesAuditFieldsAndMarksPaid() {
+        UUID staffId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+
+        Order order = Order.builder()
+                .id(orderId)
+                .orderCode("ORD-2026-TEST")
+                .orderStatus("ACCEPTED")
+                .paymentStatus("UNPAID")
+                .recipientName("Test Customer")
+                .recipientPhone("0912345678")
+                .shippingAddress("At store")
+                .build();
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+        when(orderItemRepository.findByOrderId(orderId)).thenReturn(List.of());
+
+        ManualPaymentConfirmRequest request = new ManualPaymentConfirmRequest(
+                "MBBANK-TXN-998877",
+                "Customer transferred via QR",
+                null
+        );
+
+        OrderResponse res = orderService.manualPaymentConfirm(staffId, orderId, request);
+
+        assertNotNull(res);
+        assertEquals("PAID", res.paymentStatus());
+        assertEquals("MBBANK-TXN-998877", res.manualPaymentRef());
+        assertEquals(staffId, res.paymentConfirmedBy());
+        assertEquals("Customer transferred via QR", res.paymentConfirmNote());
+        verify(orderRepository).save(order);
     }
 }

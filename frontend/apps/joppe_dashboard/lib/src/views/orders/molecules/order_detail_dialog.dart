@@ -152,12 +152,7 @@ class _OrderDetailDialogState extends State<OrderDetailDialog> {
     }
   }
 
-  String _resolveImageUrl(String url) {
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    const defaultApiUrl = 'http://localhost:8080';
-    if (url.startsWith('/')) return '$defaultApiUrl$url';
-    return '$defaultApiUrl/$url';
-  }
+  String _resolveImageUrl(String url) => ApiClient.resolveUrl(url);
 
   @override
   Widget build(BuildContext context) {
@@ -340,6 +335,40 @@ class _OrderDetailDialogState extends State<OrderDetailDialog> {
         ),
         const SizedBox(height: JoppeSpacing.sm),
 
+        if (order.manualPaymentRef != null && order.manualPaymentRef!.isNotEmpty) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withAlpha(20),
+              borderRadius: BorderRadius.circular(JoppeShapes.medium),
+              border: Border.all(color: Colors.blue.withAlpha(80)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.verified_user_outlined, size: 18, color: Colors.blue),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Xác nhận thủ công: ${order.manualPaymentRef}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blue),
+                      ),
+                      if (order.paymentConfirmNote != null && order.paymentConfirmNote!.isNotEmpty)
+                        Text(
+                          'Ghi chú: ${order.paymentConfirmNote}',
+                          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: JoppeSpacing.sm),
+        ],
+
         // Recipient details box
         Container(
           padding: const EdgeInsets.all(JoppeSpacing.md),
@@ -412,9 +441,35 @@ class _OrderDetailDialogState extends State<OrderDetailDialog> {
                         : const Icon(Icons.image, size: 20),
                   ),
                   title: Text(item.productNameSnapshot, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  subtitle: Text(
-                    '${item.variantNameSnapshot} (SKU: ${item.skuSnapshot}) • ${l10n.warrantyMonthsSnapshot(item.warrantyMonthsSnapshot)}',
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${item.variantNameSnapshot} (SKU: ${item.skuSnapshot}) • ${l10n.warrantyMonthsSnapshot(item.warrantyMonthsSnapshot)}',
+                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                      ),
+                      if (item.serialNumbers.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.qr_code_2, size: 13, color: Colors.blue),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'SN: ${item.serialNumbers.join(", ")}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

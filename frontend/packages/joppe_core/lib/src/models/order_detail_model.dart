@@ -20,6 +20,10 @@ class OrderDetailModel {
   final String orderChannel;
   final DateTime? paidAt;
   final DateTime? deliveredAt;
+  final DateTime? paymentExpiresAt;
+  final String? manualPaymentRef;
+  final String? paymentConfirmedBy;
+  final String? paymentConfirmNote;
 
   const OrderDetailModel({
     required this.id,
@@ -41,6 +45,10 @@ class OrderDetailModel {
     this.orderChannel = 'ONLINE',
     this.paidAt,
     this.deliveredAt,
+    this.paymentExpiresAt,
+    this.manualPaymentRef,
+    this.paymentConfirmedBy,
+    this.paymentConfirmNote,
   });
 
   factory OrderDetailModel.fromJson(Map<String, dynamic> json) {
@@ -75,6 +83,12 @@ class OrderDetailModel {
       deliveredAt: json['deliveredAt'] != null
           ? DateTime.tryParse(json['deliveredAt'] as String)
           : null,
+      paymentExpiresAt: json['paymentExpiresAt'] != null
+          ? DateTime.tryParse(json['paymentExpiresAt'] as String)
+          : null,
+      manualPaymentRef: json['manualPaymentRef'] as String?,
+      paymentConfirmedBy: json['paymentConfirmedBy'] as String?,
+      paymentConfirmNote: json['paymentConfirmNote'] as String?,
     );
   }
 
@@ -98,5 +112,9 @@ class OrderDetailModel {
         'orderChannel': orderChannel,
         'paidAt': paidAt?.toIso8601String(),
         'deliveredAt': deliveredAt?.toIso8601String(),
+        'paymentExpiresAt': paymentExpiresAt?.toIso8601String(),
+        'manualPaymentRef': manualPaymentRef,
+        'paymentConfirmedBy': paymentConfirmedBy,
+        'paymentConfirmNote': paymentConfirmNote,
       };
 }

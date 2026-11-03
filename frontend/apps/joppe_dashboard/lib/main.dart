@@ -95,6 +95,9 @@ class _JoppeDashboardAppState extends State<JoppeDashboardApp> {
   @override
   void initState() {
     super.initState();
+    if (widget.apiClient != null) {
+      ApiClient.defaultInstance = widget.apiClient!;
+    }
     _session = widget.initialSession;
     _locale = widget.initialLocale ?? const Locale('vi');
     _themeMode = widget.initialThemeMode ?? ThemeMode.system;
@@ -174,7 +177,7 @@ class _JoppeDashboardAppState extends State<JoppeDashboardApp> {
   }
 
   Widget _buildHome() {
-    final baseUrl = widget.apiClient?.baseUrl ?? 'http://localhost:8080';
+    final baseUrl = widget.apiClient?.baseUrl ?? ApiClient.resolveUrl('');
 
     if (_isCheckingLive && !_isServerLive) {
       return BootLoaderScreen(baseUrl: baseUrl);

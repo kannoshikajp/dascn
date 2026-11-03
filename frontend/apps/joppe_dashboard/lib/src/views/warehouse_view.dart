@@ -123,12 +123,7 @@ class _WarehouseViewState extends State<WarehouseView> {
     return '${isNeg ? '-' : ''}$formatted ₫';
   }
 
-  String _resolveImageUrl(String url) {
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    const defaultApiUrl = 'http://localhost:8080';
-    if (url.startsWith('/')) return '$defaultApiUrl$url';
-    return '$defaultApiUrl/$url';
-  }
+  String _resolveImageUrl(String url) => ApiClient.resolveUrl(url);
 
   void _openAdjustDialog(InventoryStockItem item) {
     showDialog(
