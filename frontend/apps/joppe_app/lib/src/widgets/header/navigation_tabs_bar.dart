@@ -22,7 +22,7 @@ class _NavigationTabsBarState extends State<NavigationTabsBar> {
 
   List<String> _getDynamicTabs() {
     final catalog = CatalogService();
-    final tabs = <String>['Build PC', 'So Sánh', 'Dự Tính'];
+    final tabs = <String>['Trợ Lý AI', 'Build PC', 'So Sánh', 'Dự Tính'];
 
     // Lấy các phân loại & danh mục chính đồng bộ trực tiếp từ cây danh mục API
     final tree = catalog.categoryTree;

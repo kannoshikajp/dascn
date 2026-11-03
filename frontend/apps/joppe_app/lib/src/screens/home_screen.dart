@@ -283,7 +283,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               onTabSelected: (tab) {
-                if (tab == 'Build PC') {
+                if (tab == 'Trợ Lý AI') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AiAdvisorScreen()),
+                  );
+                } else if (tab == 'Build PC') {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const BuildPcScreen()),
@@ -2104,52 +2109,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Cụm nút hành động nổi góc dưới bên phải (Cuộn lên đầu trang)
+  /// Cụm nút hành động nổi góc dưới bên phải (Nút Trợ lý AI & Cuộn lên đầu trang)
   Widget _buildFloatingActionGroup() {
-    if (!_showScrollToTop) return const SizedBox.shrink();
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(9999),
-      onTap: () {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            0,
-            duration: const Duration(milliseconds: 350),
-            curve: Curves.easeOut,
-          );
-        }
-      },
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.borderLight, width: 1.2),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x10242424),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.keyboard_arrow_up, color: AppColors.primaryBlue, size: 20),
-            Text(
-              'TOP',
-              style: TextStyle(
-                color: AppColors.primaryBlue,
-                fontSize: 8.5,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (_showScrollToTop) ...[
+          InkWell(
+            borderRadius: BorderRadius.circular(9999),
+            onTap: () {
+              if (_scrollController.hasClients) {
+                _scrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOut,
+                );
+              }
+            },
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceCard,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.borderLight, width: 1.2),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x10242424),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.keyboard_arrow_up, color: AppColors.primaryBlue, size: 20),
+                  Text(
+                    'TOP',
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
+          const SizedBox(height: 10),
+        ],
+        FloatingActionButton.extended(
+          heroTag: 'home_ai_advisor_fab',
+          backgroundColor: AppColors.primaryBlue,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AiAdvisorScreen()),
+            );
+          },
+          icon: const Icon(Icons.auto_awesome, size: 18),
+          label: const Text(
+            'Hỏi AI',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -2197,6 +2227,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               _buildBottomNavItem(
                 index: 2,
+                icon: Icons.auto_awesome_outlined,
+                activeIcon: Icons.auto_awesome,
+                label: 'Trợ lý AI',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AiAdvisorScreen()),
+                  );
+                },
+              ),
+              _buildBottomNavItem(
+                index: 3,
                 icon: Icons.calculate_outlined,
                 activeIcon: Icons.calculate,
                 label: 'Dự Tính',
@@ -2208,7 +2250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               _buildBottomNavItem(
-                index: 3,
+                index: 4,
                 icon: Icons.person_outline,
                 activeIcon: Icons.person,
                 label: 'Tài khoản',
