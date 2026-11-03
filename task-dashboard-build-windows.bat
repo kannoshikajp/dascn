@@ -6,9 +6,9 @@ if not exist "%ROOT_DIR%.tools\task.exe" (
 )
 
 echo ========================================================
-echo Building Joppe Dashboard Windows Desktop ^& Portable ZIP...
+echo Building Joppe Dashboard Windows Desktop (Production Release) ^& Portable ZIP...
 echo ========================================================
-"%ROOT_DIR%.tools\task.exe" --taskfile "%ROOT_DIR%Taskfile.yml" dashboard:build:windows %*
+"%ROOT_DIR%.tools\task.exe" --taskfile "%ROOT_DIR%Taskfile.yml" dashboard:build:windows:release %*
 set "STATUS=%ERRORLEVEL%"
 echo.
 echo ========================================================
