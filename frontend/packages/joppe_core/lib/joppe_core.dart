@@ -23,6 +23,7 @@ export 'src/models/inventory_stock_item.dart';
 export 'src/models/analytics_overview_model.dart';
 export 'src/models/vnpay_payment_model.dart';
 export 'src/models/admin_ai_model.dart';
+export 'src/models/customer_ai_model.dart';
 
 export 'src/api/api_constants.dart';
 export 'src/api/api_client.dart';
@@ -42,3 +43,4 @@ export 'src/services/pc_builder_service.dart';
 export 'src/services/analytics_service.dart';
 export 'src/services/vnpay_service.dart';
 export 'src/services/admin_ai_service.dart';
+export 'src/services/customer_ai_service.dart';

@@ -215,4 +215,29 @@ void main() {
       expect(q['vnp_SecureHash']!.length, 128); // 512-bit hex string
     });
   });
+
+  test('CustomerAiChatResponse JSON serialization and referenced products', () {
+    final response = CustomerAiChatResponse.fromJson({
+      'answer': 'Cấu hình i5 13400F + RTX 4060 rất cân bằng.',
+      'referencedProducts': [
+        {
+          'id': 'p-1',
+          'sku': 'CPU-I5-13400F',
+          'name': 'Intel Core i5-13400F',
+          'minPrice': 5200000,
+          'maxPrice': 5500000,
+          'totalStock': 12,
+        }
+      ],
+      'quickReplies': ['Tối ưu ngân sách', 'Nâng cấp lên 32GB RAM'],
+      'executedTools': ['search_products'],
+    });
+
+    expect(response.answer, contains('i5 13400F'));
+    expect(response.referencedProducts.length, 1);
+    expect(response.referencedProducts.first.sku, 'CPU-I5-13400F');
+    expect(response.referencedProducts.first.minPrice, 5200000);
+    expect(response.quickReplies.length, 2);
+    expect(response.executedTools.first, 'search_products');
+  });
 }
