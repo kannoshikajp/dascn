@@ -44,5 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Distribution and portable releases
+/dist/
+*.zip
+
 # Widget Preview related
 .widget_preview/

@@ -1,0 +1,69 @@
+name: Build Joppe Dashboard Windows Portable Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+      - dev
+    paths:
+      - 'frontend/apps/joppe_dashboard/**'
+      - 'frontend/packages/**'
+      - '.github/workflows/dashboard-windows-release.yml'
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'Backend API Base URL'
+        required: true
+        default: 'https://joppe.penguinlab.org'
+
+jobs:
+  build-windows-portable:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: flutter pub get
+
+      - name: Compile Windows Release
+        working-directory: frontend/apps/joppe_dashboard
+        run: |
+          flutter build windows --release --dart-define=API_BASE_URL=${{ github.event.inputs.api_base_url || 'https://joppe.penguinlab.org' }}
+
+      - name: Package Portable ZIP
+        shell: pwsh
+        run: |
+          $releaseDir = "frontend/apps/joppe_dashboard/build/windows/x64/runner/Release"
+          $distDir = "frontend/apps/joppe_dashboard/dist"
+          New-Item -ItemType Directory -Force -Path $distDir | Out-Null
+          $zipPath = "$distDir/joppe-dashboard-windows-x64-portable.zip"
+          Compress-Archive -Path "$releaseDir/*" -DestinationPath $zipPath -Force
+          Write-Host "Created portable ZIP at $zipPath"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: joppe-dashboard-windows-x64-portable
+          path: frontend/apps/joppe_dashboard/dist/joppe-dashboard-windows-x64-portable.zip
+
+      - name: Publish GitHub Release (Tagged builds only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: frontend/apps/joppe_dashboard/dist/joppe-dashboard-windows-x64-portable.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -99,6 +99,30 @@ tasks:
     cmds:
       - task: 'dashboard:build:{{.TARGET_ENV}}'
 
+  dashboard:build:windows:
+    desc: 'Compile Joppe Dashboard Windows Desktop release and package portable ZIP'
+    dir: frontend/apps/joppe_dashboard
+    vars:
+      API_URL: '{{.API_BASE_URL | default .PROD_API_URL}}'
+      OUTPUT_DIR: 'build/windows/x64/runner/Release'
+      DIST_DIR: 'dist'
+      ZIP_NAME: 'joppe_dashboard_windows_x64_portable.zip'
+    cmds:
+      - '{{.FLUTTER}} build windows --release --dart-define=API_BASE_URL={{.API_URL}}'
+      - cmd: 'powershell -NoProfile -Command "New-Item -ItemType Directory -Force {{.DIST_DIR}} | Out-Null; Compress-Archive -Path {{.OUTPUT_DIR}}\* -DestinationPath {{.DIST_DIR}}\{{.ZIP_NAME}} -Force; Write-Host \"Portable ZIP packaged at: frontend/apps/joppe_dashboard/{{.DIST_DIR}}/{{.ZIP_NAME}}\""'
+
+  dashboard:build:windows:dev:
+    desc: 'Compile Joppe Dashboard Windows Desktop (Dev API) and package portable ZIP'
+    dir: frontend/apps/joppe_dashboard
+    vars:
+      API_URL: '{{.DEV_API_URL}}'
+      OUTPUT_DIR: 'build/windows/x64/runner/Release'
+      DIST_DIR: 'dist'
+      ZIP_NAME: 'joppe_dashboard_windows_x64_dev_portable.zip'
+    cmds:
+      - '{{.FLUTTER}} build windows --release --dart-define=API_BASE_URL={{.API_URL}}'
+      - cmd: 'powershell -NoProfile -Command "New-Item -ItemType Directory -Force {{.DIST_DIR}} | Out-Null; Compress-Archive -Path {{.OUTPUT_DIR}}\* -DestinationPath {{.DIST_DIR}}\{{.ZIP_NAME}} -Force; Write-Host \"Portable ZIP packaged at: frontend/apps/joppe_dashboard/{{.DIST_DIR}}/{{.ZIP_NAME}}\""'
+
   dashboard:test:
     desc: 'Run Joppe Dashboard widget & integration test suites'
     dir: frontend/apps/joppe_dashboard
